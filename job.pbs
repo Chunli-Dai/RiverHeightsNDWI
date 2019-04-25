@@ -1,0 +1,9 @@
+#PBS -l nodes=1,walltime=160:00:00,mem=180gb
+#PBS -o out1
+#PBS -j oe
+#PBS -m abe
+#PBS -M dai.56@osu.edu
+cd $PBS_O_WORKDIR
+module load matlab/r2017b
+module load pgc
+exec matlab < Tilemain.m
