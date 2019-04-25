@@ -1,4 +1,4 @@
-Here are the codes and data files for generating figures in the paper by Dai et al. (Estimating river surface elevation from ArcticDEM, GRL, 2018).
+This is the update for the work in the paper by Dai et al. (Estimating river surface elevation from ArcticDEM, GRL, 2018). Here the main change is that we use mainly multispectral images rather than panchromatic images. The NDWI thresholding method is used for water classification.
 
 Things to do manually:
 1\ In .bashrc, add line export PATH=$PATH:setsmdir
@@ -58,25 +58,4 @@ b\ USGS gagewidth steps:
    change date format to be (yyyy-mm-dd hh:mm)
 4\ get txt format, usgsgagewidth.dat 
 % measurement_dt  discharge_va    chan_width      gage_height_va
-
-
-
-%% Other versions
-
-pxpymonobp1.m:reference images are the mono multispectral images in strip files
-pxpymono.m: reference images are the panchormatic orthoimage strip files.For the mono image of strip, make sure to use its own strip orthoimage as reference.
-pxpymonobp2.m:reference images not fixed to its own strip files. Not used.
-
-multispecstripbp1.m: assume mono image aligned to strip DEM, which turns out can be off by 2 m.
-multispecstrip.m: use the translational parameters to align mono image to the strip DEM.
-
-multispecmonobp1.m: use the mean of land mean and ocean mean.
-
-
-Note:
-1\ cp ~/chunliwork/river/riverpic/run2/gageflagyx/gageheights_test.m widthgageprof.m
-2\ (April 2019) For future versions, may need to manually set rangeov=[] in ChangeRiver.m to avoid cropping of image.
-3\ The parallel of pxpymono.m is tested in /home/dai.56/chunliwork/river/riverpic/riverwork2/2/testparel, which differs from resutls of serial computation by only 1e-13. Nevertheless, the computation has warnings like gdal_translate interputted.
-4\ For Debug log see /home/dai.56/chunliwork/river/riverpic/run2/readdcl
-5\ The parallel of ChangeRiver.m (ChangeRiverbp4par.m) is tested in chunliwork/river/riverpic/run2/runparal, but failed.
 
