@@ -1,0 +1,26 @@
+Input orthoimage data type : double type(64bits), all input images have to have same pixel size 
+
+Applied parellel processing by OpenMP : computation performance depends on the number of processing cores.
+
+How to excute the software on unity
+1.get interative job with multiple nodes as many as you can for speed up
+	qsub -I -l nodes=1:ppn=48,mem=50GB
+2.excute the job script after modifying input images and output path
+	./example.sh
+3.go to the output path to check the results
+
+4.delete tmp folder in ouput path
+
+Command explanations : Please refer the example.sh job script
+	./setsm -Coreg [option1] -image [reference_orthoimage_path] -image [target_orthoimage_path1] -image [target_orthoimage_path2] -outpath [output_path]
+
+	[option1] : 1 for orthoimage, 2 for DEM (future work from matlab version, currently not supported)
+	[reference_orthoimage_path] : first input image is the reference.
+	[target_orthoimage_path#] : this version supports multiple target orthoimages. Reference and all target images have to include any overlapped area to extract controls and coregistration parameters (dx and dy).
+
+	[output_path] : results
+		a. coreg_result.txt : shows orthoimage name, its coregistration parameters, and average correlation(avg_roh)
+		b. output_path/txt  : ground control points(GCPs_Image_ID_#_level_#.txt) and coregistration statistics(CoregStat_Image_ID_#_level_#.txt) between reference and target image at each pyramid level
+			(1) format of GCPs_Image_ID_#_level_#.txt : reference_X reference_Y target_X target_Y
+			(2) format of CoregStat_Image_ID_#_level_#.txt : adjustment_iteration(max:20) target_ID adjustment(dcolumn[pixel]) adjustment(drow[pixel]) Coreg_parameter(column[pixel]) Coreg_parameter(row[pixel]) number_of_controls
+ 

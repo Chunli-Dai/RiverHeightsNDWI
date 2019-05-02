@@ -1,0 +1,11 @@
+I moved them in /fs/byo/howat-data3/data1/SETSM_coreg
+
+ChangeRiverbp2.m:	%in coregisterdems2, tardem+txyz=refdem;in coregisterdems and reg.txt, tardem-dxyz=refdem;
+In here, x_target -[tx ]=x_reference.
+
+Notice: Bug 1: If use filename without path, gave wrong results. image filename must include path.
+
+see prepareMJ.m for image preparation
+INput: 1\ NEED a path
+	2\ Image data are 2 m resolution (same resolution), digital numbers instead of reflectance, double data format instead of int16.
+	3\ whole scene of image instead of cropped area around control surface.

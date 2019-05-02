@@ -1,0 +1,7 @@
+/home/dai.56/chunli/scripts//Denali/prepare.m
+
+[dai.56@unity-1 coregimage]$ cp ~/chunli/coastline/preparemimc2.m .
+[dai.56@unity-1 coregimage]$ cp ~/chunli/coastline/vmimc.m .
+cp ~/chunli/coastline/testcropocean.m .
+
+cp -r ~/chunli/coastline/MIMC2_demo_package_release_170412 .

@@ -1,0 +1,18 @@
+2c2
+< infile1='WV02_20160827214547_103001005CAE7900_16AUG27214547-M1BS-500890307070_01_P009_u16ns3413.xml';
+---
+> %infile1='WV02_20160827214547_103001005CAE7900_16AUG27214547-M1BS-500890307070_01_P009_u16ns3413.xml';
+8c8
+<  load groad.mat
+---
+> load groad.mat
+402a403
+> 	if 0
+404a406,408
+> 	else
+> 	data1=data1i;data2=data2i;
+> 	end
+416c420
+<     ref=double(data1.z(:,:,iNIR1)); %chose Near Infrared band
+---
+>     ref=double(data1.z(:,:,iRed)); %chose Near Infrared band
