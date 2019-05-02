@@ -32,3 +32,4 @@
 *.app
 
 # My custom ignores
+.DS_store
