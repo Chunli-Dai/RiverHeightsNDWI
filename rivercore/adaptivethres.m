@@ -4,7 +4,7 @@
 function [ithreshold,badflag,sigma0hat]=adaptivethres(filename,a,b)
 % a land; b water; 
 constant
-ofile=[filename,'ab.mat'];
+ofile=['pic/',filename,'ab.mat'];
 save(ofile,'a','b','-v7.3')
 
 % a=random('norm',1,2,[10000,1]);b=random('norm',5,1,[10000,1]); %for test
@@ -98,7 +98,7 @@ else
 end
 
 if flagplot==1
-	ofile=[filename,'ab.mat'];
+	ofile=['pic/',filename,'ab.mat'];
 	save(ofile,'a','b','-v7.3')
 	
         x=min([hb.BinEdges(:);ha.BinEdges(:)]):hbBin:max([hb.BinEdges(:);ha.BinEdges(:)]);
