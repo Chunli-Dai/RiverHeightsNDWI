@@ -38,7 +38,8 @@ for j=1:n2strip
 stripmetafile= [fdir2is{j},'/',f2is{j}];
 %WV02_20160515222857_1030010054295A00_16MAY15222857-M1BS-500728930090_01_P003.tif
 texttar=f2is{j}(1:13);
-p=dX4Sg2(j,:) 
+p=dX4Sg2(j,:);
+fprintf(['\n Work on j p stripmetafile ',num2str([j p]),' ',stripmetafile])
 
 % % % Get water mask % % %
 try
@@ -71,8 +72,16 @@ satname=f2is{j}(1:4);
 infile= strrep(stripmetafile,'meta.txt','dem.tif');
 data=readGeotiff(infile);
 %filtering out bad edges, e.g. 20110804
-Me=~(imdilate((data.z==-9999),ones(round(30*8)))); 
-data.z(~Me)=-9999;
+% Me=~(imdilate((data.z==-9999),ones(round(30*8)))); %Bug 23, remove too much river area
+%data.z(~Me)=-9999; %April 2019, pzxy may change the value of -9999.
+%edge based on boundary files.
+dx=data.x(2)-data.x(1); dy=data.y(2)-data.y(1);[nwy,nwx]=size(data.z);
+sx=XYb2is{j}(:,1); sy=XYb2is{j}(:,2); 
+idx=round((sx-data.x(1))/dx)+1;idy=round((sy-data.y(1))/(dy))+1;
+Med=~poly2mask(idx,idy,nwy,nwx); % fast, apply to each polygon one by one.
+Me=~(imdilate(Med,ones(round(30*8)))); 
+data.z(~Me|data.z==-9999)=NaN;
+
 [m1,n1]=size(M);[m2,n2]=size(data.z);
 if m1~=m2||n1~=n2 %Align/Interpolate the water mask to strip DEM.
 Mt= interp2(M1.x,M1.y,double(M),data.x,data.y','*nearest',0);
@@ -108,6 +117,7 @@ projstr='polar stereo north';
 ofile=[odir,'/watermask',texttar,'sj',num2str(j),'.tif'];
 %writeGeotiff(ofile,data.x,data.y,uint8(M),1,255,projstr) %wrong, M is just shoreline, not water mask.
 writeGeotiff(ofile,M1.x- p(2),M1.y - p(3),uint8(M1.z),1,255,projstr)
+fprintf(['\n Work on j p stripmetafile ',num2str([j p]),' ',stripmetafile])
 
 % [X,Y]=meshgrid(data.x,data.y);
 % data.z=z;
@@ -153,8 +163,15 @@ fprintf (['\n The lowest stage DEM in all strips:',infile])
 
     data=readGeotiff(infile);
     %filtering out bad edges, e.g. 20110804
-    Me=~(imdilate((data.z==-9999),ones(round(30*8)))); 
-    data.z(~Me)=-9999;
+%     Me=~(imdilate((data.z==-9999),ones(round(30*8)))); 
+%data.z(~Me)=-9999; %April 2019, pzxy may change the value of -9999.
+    dx=data.x(2)-data.x(1); dy=data.y(2)-data.y(1);[nwy,nwx]=size(data.z);
+    sx=XYb2is{k}(:,1); sy=XYb2is{k}(:,2); 
+    idx=round((sx-data.x(1))/dx)+1;idy=round((sy-data.y(1))/(dy))+1;
+    Med=~poly2mask(idx,idy,nwy,nwx); % fast, apply to each polygon one by one.
+    Me=~(imdilate(Med,ones(round(30*8)))); 
+    data.z(~Me|data.z==-9999)=NaN;
+    
     mtFile = strrep(infile,'dem.tif','matchtag.tif');
     mt=readGeotiff(mtFile);
     % Align the DEM coordinates to reference DEM using the translation parameters from coregistration.
@@ -353,8 +370,15 @@ else
     infile= strrep(stripmetafile,'meta.txt','dem.tif');
     data=readGeotiff(infile);
     %filtering out bad edges, e.g. 20110804
-    Me=~(imdilate((data.z==-9999),ones(round(30*8)))); 
-    data.z(~Me)=-9999;
+%     Me=~(imdilate((data.z==-9999),ones(round(30*8)))); 
+%data.z(~Me)=-9999; %April 2019, pzxy may change the value of -9999.
+    dx=data.x(2)-data.x(1); dy=data.y(2)-data.y(1);[nwy,nwx]=size(data.z);
+    sx=XYb2is{k}(:,1); sy=XYb2is{k}(:,2); 
+    idx=round((sx-data.x(1))/dx)+1;idy=round((sy-data.y(1))/(dy))+1;
+    Med=~poly2mask(idx,idy,nwy,nwx); % fast, apply to each polygon one by one.
+    Me=~(imdilate(Med,ones(round(30*8)))); 
+    data.z(~Me|data.z==-9999)=NaN;
+    
     mtFile = strrep(infile,'dem.tif','matchtag.tif');
     mt=readGeotiff(mtFile);
     % Align the DEM coordinates to reference DEM using the translation parameters from coregistration.

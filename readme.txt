@@ -3,7 +3,7 @@ This is the update for the work in the paper by Dai et al. (Estimating river sur
 Things to do manually:
 1\ In .bashrc, add line export PATH=$PATH:setsmdir
 where setsmdir is your directory of setsm code, e.g. /home/dai.56/arcticdemapp/river/rivergithub2/SETSM_coreg/
-2\ Change the code directory in constant.m, e.g. addpath(genpath([currentdir,'/../rivergithub2/']));
+2\ Change the code directory in Tilemain.m, e.g. addpath(genpath([currentdir,'/../rivergithub2/']));
 3\ Check the image directory in constant.m
 4\ Download USGS gage time series from website (e.g. https://waterdata.usgs.gov/nwis/uv?site_no=15908000) save as file usgsgage.txt (Format:yyyy-mm-dd HH:MM height(feet)).
    get usgsgagewidth.dat (Format:yyyy-mm-dd HH:MM discharge(ft^3/s) channel_width(ft) gage_height_va(ft))
@@ -58,4 +58,7 @@ b\ USGS gagewidth steps:
    change date format to be (yyyy-mm-dd hh:mm)
 4\ get txt format, usgsgagewidth.dat 
 % measurement_dt  discharge_va    chan_width      gage_height_va
+
+
+
 

@@ -34,6 +34,7 @@ rmsmeta(i)=tmp(1);dzxyd(i,1:3)=tmp(2:4);
 
 c1=c{rs(1+i)+3};r1=strfind(c1,'Image 1=');if(isempty(r1)) Warning('Image 1 not found') ; end
 r1=strfind(c1,'/');c1(1:(r1(end)))='';
+satname=c1(1:4); %add this line, in case of strip file W1W1_20130916_1020010025278100_1020010026377B00_seg1_2m_meta.txt
 
 if strcmp(satname,'WV01')
     mfile{i}=deblank(c1);
@@ -66,6 +67,8 @@ if ~isempty(rs) %if water mask file is found.
 	flagref(rs)=j;
 %psrefmo(rs,1:3)=ps;%Not accurate, since mono image is not aligned with DEM.
 	fprintf(['\n Strip id, mono id, ps (not accurate):',num2str([j, is, ps]),', ', ntffile])
+else
+    warning(['Image scene file ',ntffile,' not found!'])
 end
 end 
 end % for j
