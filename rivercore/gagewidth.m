@@ -171,7 +171,8 @@ datetick('x','yyyy')
 legend('Bad water classification','Partly bad','Good classification')
 
 
-x=347:350;y=x;
+ytmp=T6f(idb&~idWV01&id0);
+x=min(ytmp)-0.5:max(ytmp)+0.5;y=x;
 figure  
 set(gcf,'Color','white')
 set(gca,'FontSize', 12);
