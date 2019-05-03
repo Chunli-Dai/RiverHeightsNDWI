@@ -70,6 +70,7 @@ M=abs(T6f-meanT)<3*stdT&T6fstd<=0.8;
 
 % M=abs(T6f-meanT)<3*stdT&T6fstd<=0.8&~idWV01;
 M1=abs(T6f-meanT)<3*stdT&T6fstd<=0.8&~idWV01;
+M2=abs(T6f-meanT)<3*stdT&T6fstd<=0.8&~idWV01&idb;
 
 % if there is no gage, the interpolation is not accurate.
 %exclude the epochs that has no gage data, for more accurate bias calculation
@@ -77,16 +78,19 @@ if 0 %-> to do
 id=[2,3,4,5,6,8, 10,11,12, 16,19]; % 8 20110804; 19 20130413
 dh(id)=[];
 end
-RMSE=nanstd(dh(M))
-Bias=nanmean(dh(M)) %
+RMSE=nanstd(dh(M));
+Bias=nanmean(dh(M)); %
 RMSEwo1=nanstd(dh(M1));
 Biaswo1=nanmean(dh(M1)); %
+RMSEwo1b=nanstd(dh(M2));
+Biaswo1b=nanmean(dh(M2)); %
 % Bias=2.3; %winter2/gageft.txt 0.3261 rms
 gh2=gh2+Bias; %Adjust the USGS gage measurements to the vertical datum of ArcticDEM;
 
-RMSEdt=std(dh(2:end)-dh(1:(end-1)))
-Biasdt=mean(dh(2:end)-dh(1:(end-1)))
-fprintf(['RMSE Bias, RMSEdt Biasdt, (None-WV01) RMSE Bias :',num2str([RMSE Bias RMSEdt Biasdt RMSEwo1 Biaswo1])])
+RMSEdt=nanstd(dh(2:end)-dh(1:(end-1)));
+Biasdt=nanmean(dh(2:end)-dh(1:(end-1)));
+fprintf(['\n RMSE Bias, RMSEdt Biasdt, (None-WV01) RMSE Bias :',num2str([RMSE Bias RMSEdt Biasdt RMSEwo1 Biaswo1])])
+fprintf(['\n (None-WV01 None-direct) RMSE Bias :',num2str([ RMSEwo1b Biaswo1b])])
 
 % id=find(epoch==datenum('2013-03-29'));epoch(id)=[];T6f(id)=[];T6fstd(id)=[];
 % id=find(epochw==datenum('2013-03-29'));epochw(id)=[];ghfw(id,:)=[];

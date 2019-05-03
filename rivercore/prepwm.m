@@ -178,6 +178,7 @@ hold on
 ofile=['rivermaskstackedStep',num2str(stepi)];
 print('-dpng','-r400',ofile)
 %saveas(gcf,ofile,'fig')
+close all
 
 figure
 set(gcf,'Color','white')
@@ -193,6 +194,7 @@ caxis([-1 1])
 hold on
 ofile=['watermaskstacked50pStep',num2str(stepi)];
 print('-dpng','-r400',ofile)
+close all
 
 figure
 set(gcf,'Color','white')
@@ -209,3 +211,4 @@ hold on
 ofile=['riverbuffStep',num2str(stepi)];
 print('-dpng','-r400',ofile)
 
+close all
