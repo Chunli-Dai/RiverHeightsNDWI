@@ -102,11 +102,16 @@ function [XYbi,rangei]=imagebd(ifile);
     elseif flagfmt ==3
 	%/data3/ArcticDEM/region_34_alaska_north/strips/2m/WV02_20160806_103001005A286A00_103001005A1A8300_seg1_2m_meta.txt
         r=find(~cellfun(@isempty,strfind(c,vstr3(1))));
-        Xbs=deblank(strrep(c{r(1)},vstr3{1},''));
+        Xbs=deblank(strrep(c{r(1)},vstr3{1},'')) 
+	if ~isempty(Xbs)
         Xb=strread(Xbs,'%d');
         r=find(~cellfun(@isempty,strfind(c,vstr3(2))));
         Ybs=deblank(strrep(c{r(1)},vstr3{2},''));
         Yb=strread(Ybs,'%d');   
+	else
+          warning(['flagfmt=3; xml file is different as anticipated.',ifile])
+          XYbi=[0 0;]; 	rangei=[0 0 0 0];return
+	end
     elseif flagfmt ==4
 	%/home/dai.56/data2/ArcticDEM/region_31_alaska_south/tif_results/2m/GE01_20161023_1050010006C6CC00_1050010006C6CA00_501020521050_01_P003_501020521060_01_P002_2_meta.txt
 	% chunli/scripts/run_overlap.sh  gives the boundary of image including edges; to use matchtag to exclude edges.
