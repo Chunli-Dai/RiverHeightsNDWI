@@ -1,4 +1,4 @@
-#PBS -l nodes=1:ppn=1,walltime=160:00:00,mem=100gb
+#PBS -l nodes=1,walltime=160:00:00,mem=180gb
 #PBS -o out1
 #PBS -j oe
 #PBS -m abe

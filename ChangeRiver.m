@@ -273,6 +273,7 @@ for j=1:length(id)
         mon(j)=str2num(ymd(5:6));
 end
 idd=~(mon>=mons&mon<=mone); 
+%idd=[]; %keep all strips; won't work since only strips with water masks are used.
 idregion2(idd)=[];XYb2(idd)=[];dzxy2(idd)=[];
 
 %When count: get rid of the strips have the same date and same sensor
@@ -568,7 +569,6 @@ id=idregion;
 t=zeros(length(id),1);
 %load mat1.mat
 %load dX4Sg.mat %hi
-      % wm.x=[];wm.y=[];wm.z=[]; %hi
 for step=1:3   
     fprintf(['Step ',num2str(step), '...\n'])
     Msuma=zeros(nsuby,nsubx,'int32');%maximum repeat at a pixel; %repeats of non void data.
@@ -579,27 +579,19 @@ for step=1:3
         wm1.x=[];wm1.y=[];wm1.z=[];
     elseif step>=2
 	[wm]=prepwm(xout,yout,jump,prob,step);
-	if step<3 ||flagbuf==0
-           wm= rmfield(wm,'buf');
+        if step<3 ||flagbuf==0
+           wm= rmfield(wm,'buf'); 
         end
 	wm1=wm;%To be compatible with older versions.
     end
-
-    if step==3;continue;end
-
+    
 %   [~,idsort]=sort(t);id=id(idsort); %sort the id based on tim
     idd=[];
-	poolobj=parpool(poolsize);
-	parfor j=1:length(id)
+	for j=1:length(id)
         display(['Working on strip ',num2str(j), ': ',f{id(j)}])
         ymd=f{id(j)}(6:13);i=id(j); 
         t(j)=datenum(ymd,'yyyymmdd');
         iisv=find(isv==i);%iisv ==j
-
-        if iisv ~= j
-        warning(['iisv is not equal to j:',num2str([iisv j])])
-        end
-
         demdir=fdir{i};
         satname=f{i}(1:4);
         
@@ -611,26 +603,26 @@ for step=1:3
         [demdir,name,ext] =fileparts([(infile)]);
         name1=[name(end-3:end),ext];
         % To check whether the data is mono or scene files
-        flagfmt=0;
+	flagfmt=0;
         if strcmp(name1,'meta.txt')
-            flagfmt=3; %stereo files
+        flagfmt=3; %stereo files
         elseif strcmp(ext,'.xml')
-            flagfmt=1; %xml files mono
+        flagfmt=1; %xml files mono
         end
 	
-        %check whether the data is multispectral image
-        flagfmt2=0; %panchromatic band
-        r1=strfind(name,'M1BS');
-        if ~isempty(r1); flagfmt2=1;end
-
-        datarsvt=datarsv(j);
-    if isempty(datarsvt.x) % non exist ; step 1,
+	%check whether the data is multispectral image
+	flagfmt2=0; %panchromatic band
+	r1=strfind(name,'M1BS');
+	if ~isempty(r1); flagfmt2=1;end
+        
+    if isempty(datarsv(iisv).x) % non exist ; step 1,
         ndwisv=struct('x',[],'y',[],'z',[]);%Initialize
         data=struct('x',[],'y',[],'z',[],'n',[]);%Initialize
               
-        flagproc=1;flagcon=0;
+        flagproc=1;
         if flagfmt2==1 %multispectral image
 %             infile= strrep([demdir,'/',f{i}],'.xml','.xml');
+            clear data        
             data=multispecmono(infile,wm,ndwisv,rangeov); %given strip meta file, finding all image 1 multispectral imageries, orthrectiying, get water mask.
    
         elseif step==3  %stereo orthorectified panchromatic image; or WV01 mono panchromatic image
@@ -638,77 +630,98 @@ for step=1:3
             data=maskentropy(infile,wm1,ndwisv,rangeov);
         else % nothing processed.
             flagproc=0;
-            idd=[idd;j]; flagcon=1;%continue
+            idd=[idd;j]; continue
         end
         display(['Getting water mask of this strip ',num2str(j)]);
         
         if isempty(data.z)&&flagproc==1
 	%Modification Sept. 25, 2018: save the empty results to avoid repeat calculation of NDWI.
-	%NDWI is already saved. Better to reprocess the water mask with new threshold.
+	if 0 %NDWI is already saved. Better to reprocess the water mask with new threshold.
+        datar= struct();
+        datar.x=1;datar.y=[];  datar.z=[]; datar.n=[];
+        datarsv(iisv)=datar;
+	end
 
-            idd=[idd;j]; flagcon=1; %continue
+            idd=[idd;j]; continue
         end  
+    if 0
+        figure;
+        imagesc(data.x,data.y,data.z)
+        hold all;plot(x0st, y0st,'r-','linewidth',6)
+        plot(x0, y0,'g-','linewidth',4)
+        plot(xeq, yeq ,'r*','Markersize',12)
+        title(['isel=',num2str(isel),f{i}])
+        plot(Cl(1,:),Cl(2,:),'.-','Color','m','linewidth',2) %r+-
+        axis(rang0)
+        colormap gray
+        colorbar
+        ofile=[ymd,f{i}(1:4),'isel',num2str(isel),'Ortho']; %20130414WV01isel2Ortho
+        saveas(gcf,ofile,'fig')
+    end
+        
+        %not neccesary
+        ranget=[[min(data.x) max(data.x) min(data.y) max(data.y)]/resr];
+        ranget=[ceil(ranget(1)) floor(ranget(2)) ceil(ranget(3)) floor(ranget(4))]*resr;
+        tx=ranget(1):resr:ranget(2);ty=ranget(4):-resr:ranget(3);
+        tz = interp2(data.x,data.y,data.z,tx,ty','*nearest',-1);
+        tn = interp2(data.x,data.y,data.n,tx,ty','*nearest',nan);%ndwi
+%         tz = interp2(data.x,data.y,data.z,tx,ty','*nearest',-1); %NDWI or brightness.
+%       tz(isnan(tz))=-1;tz=int8(tz); %DOUBLE TO INT8
+        datar= struct();
+        datar.x=tx;datar.y=ty;datar.z=tz; datar.n=tn;%datar.coast=data.coast;
 
-        if flagcon==0         
-            %not neccesary
-            ranget=[[min(data.x) max(data.x) min(data.y) max(data.y)]/resr];
-            ranget=[ceil(ranget(1)) floor(ranget(2)) ceil(ranget(3)) floor(ranget(4))]*resr;
-            tx=ranget(1):resr:ranget(2);ty=ranget(4):-resr:ranget(3);
-            tz = interp2(data.x,data.y,data.z,tx,ty','*nearest',-1);
-            tn = interp2(data.x,data.y,data.n,tx,ty','*nearest',nan);%ndwi
-    %         tz = interp2(data.x,data.y,data.z,tx,ty','*nearest',-1); %NDWI or brightness.
-    %       tz(isnan(tz))=-1;tz=int8(tz); %DOUBLE TO INT8
-            datar= struct();
-            datar.x=tx;datar.y=ty;datar.z=tz; datar.n=tn;%datar.coast=data.coast;
+        datarsv(iisv)=datar; %possible crash with parallel; original coordinates
 
-            %datarsv(iisv)=datar; %possible crash with parallel; original coordinates
-            %datarsv(j)=datar; %do not save data to reduce memory use.
-
-            dzxyt=dX4Sg(idregion==i,:); % possible wrong match
-            dX4S=dzxyt(2:3); 
-        end
+    dzxyt=dX4Sg(idregion==i,:); % possible wrong match
+    dX4S=dzxyt(2:3); 
 
 	%collect all image edge lines
+	tzedg=tz==-1; %datar.z==-1;
+	tzd1=imdilate(tzedg, ones(3));
+	tze1=imerode(tzedg,ones(3));
+	tzl=tzd1&(~tze1); %edge lines
+	%[X,Y]=meshgrid(datar.x,datar.y);
+	tz = interp2(datar.x-dX4S(1),datar.y-dX4S(2),tzl,xout,yout','*nearest',0); %check time
+	Medgsib=Medgsib|tz; %edge 1; non edge 0
       
 	else %load water mask data for collecting demg; step 2
-        fprintf(['\n Use saved data to save computation time.\n'])
-        datar=datarsv(j);
+        datar=datarsv(iisv);
 
-        flagcon=0;
         %Modification Sept. 25, 2018:skip empty results.
         if isempty(datar.z)
                 idd=[idd;j];
-                flagcon=1;%continue
+                continue
         end
         
-        if flagcon==0
-            if step>=2
-                ndwisv.x=datar.x;ndwisv.y=datar.y; ndwisv.z=datar.n;% The .x, .y coordinates are already coregistered to a reference in step 1.
+        if step>=2
+            ndwisv.x=datar.x;ndwisv.y=datar.y; ndwisv.z=datar.n;% The .x, .y coordinates are already coregistered to a reference in step 1.
+            
+%       if flagmono==1&&~strcmp(satname,'WV01')&&flagfmt==1 %mono multispectral image
+        if flagfmt2==1 %multispectral image
+            data=multispecmono(infile,wm,ndwisv,rangeov); %given strip meta file, finding all image 1 multispectral imageries, orthrectiying, get water mask.
+        else %stereo orthorectified panchromatic image; or WV01 mono panchromatic image
+            data=maskentropy(infile,wm1,ndwisv,rangeov);
+        end
+        datar.x=data.x;datar.y=data.y;datar.z=data.z; datar.n=data.n;
+        datarsv(iisv)=datar; %update the water mask for step 2;
 
-        %       if flagmono==1&&~strcmp(satname,'WV01')&&flagfmt==1 %mono multispectral image
-                if flagfmt2==1 %multispectral image
-                    data=multispecmono(infile,wm,ndwisv,rangeov); %given strip meta file, finding all image 1 multispectral imageries, orthrectiying, get water mask.
-                else %stereo orthorectified panchromatic image; or WV01 mono panchromatic image
-                    data=maskentropy(infile,wm1,ndwisv,rangeov);
-                end
-                datar.x=data.x;datar.y=data.y;datar.z=data.z; datar.n=data.n;
-                datarsv(j)=datar; %update the water mask for step 2;
+        if isempty(data.z) %Using a priori information, the water mask can be void if quality bad.
+	%Modification Sept. 25, 2018: save the empty results to avoid repeat calculation of NDWI.
+	if 0 %NDWI is already saved. Better to reprocess the water mask with new threshold.
+        datar= struct();
+        datar.x=1;datar.y=[];  datar.z=[]; datar.n=[];
+        datarsv(iisv)=datar;
+	end
+            idd=[idd;j];
+            continue
+        end
 
-                if isempty(data.z) %Using a priori information, the water mask can be void if quality bad.
-            %Modification Sept. 25, 2018: save the empty results to avoid repeat calculation of NDWI.
-            %NDWI is already saved. Better to reprocess the water mask with new threshold.
-                    idd=[idd;j];
-                    flagcon=1;%continue
-                end
-
-            else %step 1
-                 % do nothing
-            end
-        end %if flagcon
+        else %step 1
+             % do nothing
+        end
 
     end %if
     
-	if flagcon==0
     %Apply the offset when mosaicing the masks.
         %coregister to a reference (e.g. ICESat). reg.txt file or feature tracking.
 %         dzxyt=dzxyd(idregion==i,:);%dzxy{idregion==i};%lots of them missing along coast.
@@ -721,12 +734,28 @@ for step=1:3
     %assign DEM to the box.
     tz = interp2(datar.x,datar.y,datar.z,xout,yout','*nearest',-1);
     M=tz~=-1; % data pixel;
-    %Msuma(M)=Msuma(M)+1; %repeats of non void data.
-    Msuma=Msuma+int32(M); %repeats of non void data.
+    Msuma(M)=Msuma(M)+1; %repeats of non void data.
     M=tz==1; %water pixel;%1, water, 0 non water, -1 void data.
-    %Msum(M)=Msum(M)+1;
-    Msum=Msum+int32(M);
-	end % if flagcon	
+    Msum(M)=Msum(M)+1;
+    
+	
+    if 0 %flagplot==1&&step>=2
+    [X,Y]=meshgrid(data.x,data.y);
+    M=data.coast;
+    figure;
+    hold all
+    set(gcf,'Color','white');set(gca,'FontSize', 18);set(gcf, 'PaperPosition', [0 0 6 4]);set(gcf, 'PaperSize', [ 6 4]);
+    imagesc(datar.x*1e-3,datar.y*1e-3,double(datar.n))
+    colormap jet;colorbar
+    hold on;plot(X(M)*1e-3,Y(M)*1e-3,'ko')
+    if flagfmt2==1 %multispectral image
+    title(['NDWI ',name(6:13)]);
+    elseif flagfmt2==0
+    title(['Pan-band Brightness ',name(6:13)]);
+    end
+    axis equal
+    saveas(gcf,[name],'fig')
+    end
 	close all
     
 	%Oct 9, 2018
@@ -734,12 +763,9 @@ for step=1:3
 % 	if j-length(idd) >= novmax;idd=[idd(:);[j+1:length(id)]'];  break;end
 
 	end %for j
-    delete(poolobj)
-
 % % end of loading
 % 	id(idd)=[];demg(:,:,idd)=[];t(idd)=[];
-
-
+%save work1.mat demg
 iprobthre=probthre;
 if step==2 % Let the threshold be high, so it can be used to get Pan-brightness/NDWI over water area.
    iprobthre=90; %try 80; considearing clouds make part of river having less water probability.
@@ -802,9 +828,9 @@ plot(loneq, lateq ,'rs','Markersize',12)
 view(0,90)
 box on
 hl=xlabel('Longitude ($^{\circ}$)');
-%set(hl, 'Interpreter', 'latex');
+set(hl, 'Interpreter', 'latex');
 hl=ylabel('Latitude ($^{\circ}$)');
-%set(hl, 'Interpreter', 'latex');
+set(hl, 'Interpreter', 'latex');
 ofile=[odir,'/watermask'];
 %saveas(gcf,ofile,'fig')
 %savefig(H,ofile,'compact')
@@ -850,8 +876,8 @@ fdir2is=fdir2(id);
 XYb2is=XYbg2(id);
 %dX4Sg2is=dX4Sg2;
 
-%[Co]=riverprofsub(odir,datarsv,XYbis,fis,fdiris,dX4Sg,XYb2is,f2is,fdir2is,dX4Sg2);
-[Co]=riverprofsub(odir,wm,XYbis,fis,fdiris,dX4Sg,XYb2is,f2is,fdir2is,dX4Sg2);
+[Co]=riverprofsub(odir,datarsv,XYbis,fis,fdiris,dX4Sg,XYb2is,f2is,fdir2is,dX4Sg2);
+%[Co]=riverprofsub(odir,wm,datarsv,XYbis,fis,fdiris,dX4Sg,XYb2is,f2is,fdir2is,dX4Sg2);
 
 %Use the jump data in step2
 if exist('jumpsv','var')
@@ -894,6 +920,7 @@ npt=sum(sum(data.z==1));
 if npt>0
 	try
 	[c]=mask2centerline(data);
+	save cl1.mat c
 	catch e
                 fprintf('There was an error! The message was:\n%s',e.message);
 		fprintf('\n')
@@ -906,11 +933,10 @@ if npt>0
 	%use data0r to get the height
 	pth = interp2(data0r.x',data0r.y,data0r.z, clx,cly,'*nearest');
 	if pth(2)<pth(1) %downhill
-        fprintf(['\n Flip centerline so that it goes uphill. Heights of two ends:',num2str(pth')]);
+        fprintf(['\n Flip centerline to go uphill. Heights of two ends:',num2str(pth')]);
 	c.X=flip(c.X);
 	c.Y=flip(c.Y);
 	end
-	save cl1.mat c
 else
    fprintf(['No water pixels in the water mask. ']); 
 end %if npt>0

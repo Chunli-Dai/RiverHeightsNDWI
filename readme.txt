@@ -1,20 +1,13 @@
-Same as https://github.com/Chunli-Dai/RiverHeightsNDWI, except in parallel.
+This is the update for the work in the paper by Dai et al. (Estimating river surface elevation from ArcticDEM, GRL, 2018). Here the main change is that we use mainly multispectral images rather than panchromatic images. The NDWI thresholding method is used for water classification.
 
 Things to do manually:
-5\ run qsub jobp48.pbs
-4\ copy the entire folder rivercore to your local source folder from https://github.com/Chunli-Dai/RiverHeightsNDWI.
-3\ Change constant.m, poolsize=24; %24;
-2\ Chang Tilemain.m, line 115 to the line number of target station : for i=32
-1\ Change Tilemain.m, line 9 to the directory of code: addpath(genpath(['/home/dai.56/arcticdemapp/river/rivergithub2v2/']));
-
-
-########Same as RiverHeightsNDWI
 1\ In .bashrc, add line export PATH=$PATH:setsmdir
 where setsmdir is your directory of setsm code, e.g. /home/dai.56/arcticdemapp/river/rivergithub2/SETSM_coreg/
-2\ Change the code directory in constant.m, e.g. addpath(genpath([currentdir,'/../rivergithub2/']));
+2\ Change the code directory in Tilemain.m, e.g. addpath(genpath([currentdir,'/../rivergithub2/']));
 3\ Check the image directory in constant.m
-4\ Download USGS gage time series from website (e.g. https://waterdata.usgs.gov/nwis/uv?site_no=15908000) save as file usgsgage.txt.
-   get usgsgagewidth.dat
+4\ Download USGS gage time series from website (e.g. https://waterdata.usgs.gov/nwis/uv?site_no=15908000) save as file usgsgage.txt (Format:yyyy-mm-dd HH:MM height(feet)).
+   get usgsgagewidth.dat (Format:yyyy-mm-dd HH:MM discharge(ft^3/s) channel_width(ft) gage_height_va(ft))
+  See below for details;
 5\ Edit Tilemain, let i be selected station number in "for i=32"; Run matlab< Tilemain.m
 6\ To do: automatically select the direction in rivercenterline.
 
@@ -45,23 +38,27 @@ legs.m, legsd.m: computation of legendre function for fitting rating curve.
 The comparison of river height time series by two different methods.
 comparemethods.m
 
+####################################################
 
-%% Other versions
+## Steps for getting usgs height and width time series:
+a\ Getting usgs height
+https://waterdata.usgs.gov/nwis/uv?site_no=15908000
+https://nwis.waterdata.usgs.gov/nwis/inventory ; search lat lon
+click " Current / Historical Observations "
+Choose Discharge, Gage Height, Tab-separated, Begin date and End date; then click go
+awk -F'\t' '{if ($7!="") print $3, $7}' uv10to16.txt > usgsgage.txt  #tab separated; ^_^; manually checked
 
-pxpymonobp1.m:reference images are the mono multispectral images in strip files
-pxpymono.m: reference images are the panchormatic orthoimage strip files.For the mono image of strip, make sure to use its own strip orthoimage as reference.
-pxpymonobp2.m:reference images not fixed to its own strip files. Not used.
+b\ USGS gagewidth steps:
+1\ download data from https://waterdata.usgs.gov/nwis/measurements?site_no=15908000&agency_cd=USGS&format=html_table_expanded (search field measurements from https://waterdata.usgs.gov/nwis/inventory/?site_no=15908000&agency_cd=USGS )
+2\ download data with tab-separated data (measurementstab.txt)
+   click "Tab-separated data with channel data"
+3\ import to excel, and then edit, get usgsgagewidth.xlsx
+   when import, choose Data-> from text->Delimited; started from row 15;
+   delete columns except (measurement_dt  discharge_va    chan_width      gage_height_va)
+   change date format to be (yyyy-mm-dd hh:mm)
+4\ get txt format, usgsgagewidth.dat 
+% measurement_dt  discharge_va    chan_width      gage_height_va
 
-multispecstripbp1.m: assume mono image aligned to strip DEM, which turns out can be off by 2 m.
-multispecstrip.m: use the translational parameters to align mono image to the strip DEM.
-
-multispecmonobp1.m: use the mean of land mean and ocean mean.
 
 
-Note:
-cp ~/chunliwork/river/riverpic/run2/gageflagyx/gageheights_test.m widthgageprof.m
-
-Version:  rivergithub2v2
-Main change: do not save datar, which use too large memories.
-Difference with rivergithub2 on results: datarsv is water mask interpolated to 2m resolutio. whileas, in rivergithub2v2, water mask is the original resolution, which is finer than 2m.
 

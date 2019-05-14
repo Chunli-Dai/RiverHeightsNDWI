@@ -6,8 +6,7 @@ macdir=[];
 
 currentdir=pwd;
 addpath(genpath(currentdir));
-addpath(genpath(['/home/dai.56/arcticdemapp/river/rivergithub2v2/']));
-
+addpath(genpath([currentdir,'/../rivergithub2/']));
 % addpath(genpath([macdir,'/data/chunli/scripts/']));
 % addpath(genpath([macdir,'/data/chunli/coastline/codec2/mapformats/']));
 

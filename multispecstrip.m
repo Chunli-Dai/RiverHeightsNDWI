@@ -1,4 +1,5 @@
-function  [Mstrip]=multispecstrip(stripmetafile,pzxy,wm,fis,dX4Sg)
+function  [Mstrip]=multispecstrip(stripmetafile,pzxy,Msv,fis,dX4Sg)
+%function  [Mstrip]=multispecstrip(stripmetafile,pzxy,wm,fis,dX4Sg,Msv)
 %given strip meta file, finding all image 1 multispectral imageries, orthrectiying, get water mask
 % get the shoreline from multispectral images using NDWI index
 % Need files: orthorectified imagery, xml files
@@ -81,28 +82,7 @@ rs=find(~cellfun(@isempty,strfind(fis,ntffile)));
 
 if ~isempty(rs) %if water mask file is found.
     rs=rs(1);
-%   data=Msv(rs);
-    
-    infile=fis{rs};
-    rangeov=[];
-
-    %check whether the data is multispectral image
-    name=ntffile;
-    flagfmt2=0; %panchromatic band
-    r1=strfind(name,'M1BS');
-    if ~isempty(r1); flagfmt2=1;end
-
-    ndwisv=struct('x',[],'y',[],'z',[]);%Initialize
-    if flagfmt2==1 %multispectral image
-        clear data
-        data=multispecmono(infile,wm,ndwisv,rangeov); %given strip meta file, finding all image 1 multispectral imageries, orthrectiying, get water mask.
-
-    else %stereo orthorectified panchromatic image; or WV01 mono panchromatic image
-%         infile=  strrep([demdir,'/',f{i}],'meta.txt','dem.tif');
-        data=maskentropy(infile,wm,ndwisv,rangeov);
-    end
- 
- 
+    data=Msv(rs);
     data.z=int8(data.z);%avoid bug 1, Error using max,
     M=data.z;
     tzxy3=dX4Sg(rs,1:3);
@@ -218,6 +198,7 @@ end
 %[M,~]=mask2coast(Mstrip);
 [M,Modfil]=mask2coast(Mstrip);
 %Use the mosaiced mask, do not alter
+%Make sure to not apply the removal of lakes, if the removal is not applied for mono images for fair comparison in lowest.
 %if isfield(wm, 'buf') %same control; do not apply the removal of lakes until last step.
 %Mstrip.z=int8(Modfil); %remove clusters and lakes, for better calculation of river width out of water mask.
 %end
