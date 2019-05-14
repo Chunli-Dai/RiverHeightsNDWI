@@ -7,6 +7,7 @@ function [dX4Sg]=pxpymono(dX4Sg2,f2is,fdir2is,XYb2is,fis,fdiris,XYbis)
 %	psrefmo: the pzxy for the reference mono image.
 
 %save test1.mat dX4Sg2 f2is fdir2is XYb2is fis fdiris XYbis -v7.3
+constant
 
 n=length(fis);n2=length(f2is);
 Mrefmo=false(n,1);
@@ -80,7 +81,8 @@ idtar=1:n;%find(Mrefmo~=1);
 %idtar=[72,82]; %test two mono images (79 80) of strip WV02_20160827_103001005A735B00_103001005CAE7900_seg1_2m_dem.tif
 fprintf(['\n Number of targe images:',num2str(length(idtar)),'\n'])
 dX4Sg=zeros(length(idtar),3);
-	for j=1:length(idtar)
+poolobj=parpool(poolsize);
+	parfor j=1:length(idtar)
 %fprintf(['\n hi1 j=',num2str(j)])
 	is=idtar(j);
 	tarimage=[fdiris{is},'/',fis{is}];
@@ -116,20 +118,25 @@ dX4Sg=zeros(length(idtar),3);
     	fprintf(['\n Mono image id, tar ref: ',num2str([is]),' ', tarimage,' ',refimage])
 
 	odircoreg='./outcoreg/'
-	if ~exist(odircoreg,'dir')
-	  mkdir(odircoreg)
+        odircoregi=[deblank(odircoreg),'/',num2str(j),'/'];
+	if ~exist(odircoregi,'dir')
+	  mkdir(odircoregi)
 	end
 
-	%prepare images for coregistration
-	[refimagep,tarimagep,dataref,datatar]=prepareMJ(refimage,tarimage,odircoreg);
+        %prepare images for coregistration
+        [refimagep,tarimagep,dataref,datatar]=prepareMJ(refimage,tarimage,odircoregi);
 
-	str=['time setsm -Coreg 1 -image ',refimagep,' -image ', tarimagep, ' -outpath ', odircoreg];
+	str=['time setsm -Coreg 1 -image ',refimagep,' -image ', tarimagep, ' -outpath ', odircoregi];
 	fprintf([str,'\n'])
 	[status, cmdout]=system(str);
 	
 	%plot the animation of images and control points before and after coregistration
 	%refers to /home/dai.56/arcticdemapp/river/riverwork/coregtest1/plotcontrolpts.m
-	cpts=load([odircoreg,'/txt/GCPs_Image_ID_1_level_0.txt']);
+	filecpt=[odircoregi,'/txt/GCPs_Image_ID_1_level_0.txt'];
+        if ~exist('filecpt','file')
+    	   fprintf(['\n Mono image coregistration failure id: ',num2str([is]),' ',tarimage,'\n'])
+	else
+	cpts=load(filecpt);
 	%Before Coregistration
     rangtar=[min(datatar.x) max(datatar.x) min(datatar.y) max(datatar.y)];
     rangref=[min(dataref.x) max(dataref.x) min(dataref.y) max(dataref.y)];
@@ -142,7 +149,7 @@ dX4Sg=zeros(length(idtar),3);
 	
 	%get coregistration parameters
 	%txy=[-1.86 5.04 ];
-	coregfile=[odircoreg,'coreg_result.txt'];
+	coregfile=[odircoregi,'coreg_result.txt'];
 	c=textread(coregfile,'%s','delimiter','\n');	
 	r=find(~cellfun(@isempty,strfind(c,tarimagep)));
 	%Ty[meter]       Tx[meter]       avg_roh(average correlation)
@@ -160,14 +167,18 @@ dX4Sg=zeros(length(idtar),3);
 	[co]=testgif(dataref,datatarc,range0,cpts,refimagep,tarimagep,2);
 
 	system(['rm ',refimagep, ' ',tarimagep])
- 	system(['rm ',odircoreg, '/tmp/*'])
+ 	system(['rm ',odircoregi, '/tmp/*'])
+ 	system(['rm ',odircoregi, '/*.envi*'])
 	
 	ps=[0 txy]; %zxy
 %	psref=psrefmo(isref,1:3);
 	psref=[dX4Sg2(isref,1:3)];psref(1)=0;
-	dX4Sg(is,1:3)=ps+psref;
+	%dX4Sg(is,1:3)=ps+psref; %Error: The variable dX4Sg in a parfor cannot be classified, if dX4Sg(j,1:3)=1:3; dX4Sg(is,:)=1:3;
+	dX4Sg(j,:)=ps+psref;
     	fprintf(['\n Mono image id, pzxy, pzxytile: ',num2str([is, ps,ps+psref]),' ',tarimage,' ',refimage,'\n'])
+	end  % exist
 	end
+delete(poolobj)
 
 return
 end

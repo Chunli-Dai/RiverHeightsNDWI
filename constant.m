@@ -24,18 +24,19 @@ flagmono=1; %1 use mono images only; 2 use stereor
 widthstat=0;  %buffer width of a priori river mask for calculating ndwi statistics, and the buffer of tile for calculation.
 mons=5;mone=10; %mon>=5&mon<=10; %mons, start month of running/non-frozen rivers. %mone, end month of running water.
 %mons=1;mone=12; %all season.
-
+poolsize=1; %24;
 flagsect=0;  %1 work on a section of river; 0 work on a gage
-flagbuf=1; %Suggest 1; apply the river buffer or not. 1 apply; 0 do not apply. check riverbuffStep3.png, then decide.
-
+flagbuf=1; %apply the river buffer or not. 1 apply; 0 do not apply. check riverbuffStep3.png, then decide.
+flaglowest=0; % use the designated dem as lowest stage DEM for retrieving height profiles. 0 don't use; 1 use; 2 use but compare stage.
+idlowest=1; %give a number based the output ('Use these strip DEMs').
 
 %control parameters for multispec.m
 threshold=0.3; %Suggest value 0.5 or 0.3; % general threshold of NDWI for water classification.
-%0.5 lost most of water pixels for Tananna
 probthre=50.;% threshold for water probability. %Best for migitating random coregistration offset: 50.
 stdthres=0.5; % if NDWI STD > stdthres, discard the image. Suggest value 0.5
-dmthres=0.5; % if mean_ocean - mean_land > dmthres, discard the image. Suggest value 0.6
+dmthres=0.4; % if mean_ocean - mean_land > dmthres, discard the image. Suggest value 0.6 for ocean; 0.4 for river;
 %For tanana river, it seems lots of good images has dmthres < 0.6, try 0.5. Need to get a statistical value based on clouds.
+
 comerrthres=0.25;%2;%0.2;% commission error threshold; if  comerr >= comerrthres, image is bad.
 		%Based on 55 images test for sag river, suggest value 0.25.
 resr=2;

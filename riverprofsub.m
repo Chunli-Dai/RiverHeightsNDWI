@@ -1,7 +1,7 @@
-function [Co]=riverprofsub(odir,Msv,XYbis,fis,fdiris,dX4Sg,XYb2is,f2is,fdir2is,dX4Sg2)
-%function [Co]=riverprofsub(odir,wm,Msv,XYbis,fis,fdiris,dX4Sg,XYb2is,f2is,fdir2is,dX4Sg2)
+function [Co]=riverprofsub(odir,wm,XYbis,fis,fdiris,dX4Sg,XYb2is,f2is,fdir2is,dX4Sg2)
 % method 1: direct method; % has to be scene files.
 % method 2: imagery-altimetry method % can be scene files or mono imageries with one reference DEM.
+% Modification: April 2019, do not use saved water mask to reduce memory use.
 
 % Elevation extraction.
 %
@@ -13,13 +13,17 @@ function [Co]=riverprofsub(odir,Msv,XYbis,fis,fdiris,dX4Sg,XYb2is,f2is,fdir2is,d
 constant
 Co=[];
 
-iref=1; %20111008 the lowest stage. 
+% iref=1; %20111008 the lowest stage. 
 
 
 %fprintf ('\n Step 0: geting the boundary for all files in the region.')
 
 n=length(fis);n2strip=length(f2is);
 id=1:n;
+
+for j=1:n
+fisfull{j}=[fdiris{j},'/',fis{j}];
+end
 
 if 0 %flagcoreg==1
 %control/stable surfaces for coregistration; roads database
@@ -34,21 +38,23 @@ end % if
 % For strip files using the direct method.
 datarsv2(n2strip)=struct('x',[],'y',[],'z',[]);
 idd=[];
-for j=1:n2strip
+poolobj=parpool(poolsize);
+parfor j=1:n2strip
 stripmetafile= [fdir2is{j},'/',f2is{j}];
 %WV02_20160515222857_1030010054295A00_16MAY15222857-M1BS-500728930090_01_P003.tif
-texttar=f2is{j}(1:13);
+texttar=f2is{j}(1:19);
+[datestr]=strip2date(stripmetafile);
+texttar(6:19)=datestr(:);
 p=dX4Sg2(j,:);
 fprintf(['\n Work on j p stripmetafile ',num2str([j p]),' ',stripmetafile])
 
 % % % Get water mask % % %
 try
-M=multispecstrip(stripmetafile,p,Msv,fis,dX4Sg); %Notice: the matrix may not match the DEM strip matrix; due to different resolution. 
-%M=multispecstrip(stripmetafile,p,wm,fis,dX4Sg,Msv); 
+M=multispecstrip(stripmetafile,p,wm,fisfull,dX4Sg); %Notice: the matrix may not match the DEM strip matrix; due to different resolution. 
 catch e
      fprintf('\nThere was an error! The message was:\n%s',e.message);
      fprintf(['\nstripmetafile is ',stripmetafile])
-save test1.mat stripmetafile p Msv fis dX4Sg  -v7.3
+% save test1.mat stripmetafile p fis dX4Sg  -v7.3
 idd=[idd;j];
 continue
 end
@@ -92,7 +98,6 @@ mtFile = strrep(infile,'dem.tif','matchtag.tif');
 mt=readGeotiff(mtFile);
 
 % Align the DEM coordinates to reference DEM using the translation parameters from coregistration.
-p
 data.x=data.x- p(2);data.y=data.y- p(3);data.z=data.z- p(1);
 [X,Y]=meshgrid(data.x,data.y);
 [LAT,LON]=polarstereo_inv(X(M),Y(M),[],[],70,-45);
@@ -110,14 +115,17 @@ end
 output=[LAT(:),LON(:),double(data.z(M)),X(M),Y(M)];
 %ofile=[odir,'/rivprof',num2str(ymd),satname,'rawj',num2str(j),'.dat'];
 ofile=[odir,'/rivprof',texttar,'rawj',num2str(j),'.dat'];
-save(ofile,'output','-ascii') 
+% save(ofile,'output','-ascii') 
+fid2 = fopen(ofile, 'w');
+fprintf(fid2,' %17.7e  %17.7e  %17.7e  %17.7e  \n',output'); %
+fclose(fid2);
 
 %save M water mask
 projstr='polar stereo north';
 ofile=[odir,'/watermask',texttar,'sj',num2str(j),'.tif'];
 %writeGeotiff(ofile,data.x,data.y,uint8(M),1,255,projstr) %wrong, M is just shoreline, not water mask.
 writeGeotiff(ofile,M1.x- p(2),M1.y - p(3),uint8(M1.z),1,255,projstr)
-fprintf(['\n Work on j p stripmetafile ',num2str([j p]),' ',stripmetafile])
+fprintf(['\n Double check j p:',num2str([j p])])
 
 % [X,Y]=meshgrid(data.x,data.y);
 % data.z=z;
@@ -128,26 +136,38 @@ epochorg=Y(M);
 yp=epochorg(idkp);
 
 output=[LAT(idkp),LON(idkp),double(demp(idkp)),(yp(:)-y0s)];
-if isempty(output) %avoid writing empty files
-continue;
-end
+if ~isempty(output) %avoid writing empty files
 % ofile=[odir,'rivprof',num2str(ymd),'s.dat']; %remove outlier
 %ofile=[odir,'/rivprof',num2str(ymd),satname,'sj',num2str(j),'.dat'];
 ofile=[odir,'/rivprof',texttar,'sj',num2str(j),'.dat'];
-save(ofile,'output','-ascii') 
+% save(ofile,'output','-ascii') 
+fid2 = fopen(ofile, 'w');
+fprintf(fid2,' %17.7e  %17.7e  %17.7e  %17.7e  \n',output'); %
+fclose(fid2);
+end
 %output=[epoch(t:)-y0s,T6(:),T6std(:)];
 %ofile=['rivprof',num2str(i),'ms.dat']; %mean and std
 %save(ofile,'output','-ascii') 
 %end % if method ==1
 end %j
+delete(poolobj)
 %delete strips that have empty water mask.
 if length(idd)>0
-fprintf(['\n ',num2str(length(idd)),' strip DEMs have no water mask data:',f2is{idd},'\n'])
-XYb2is(idd)=[];f2is(idd)=[];fdir2is(idd)=[];dX4Sg2(idd,:)=[];datarsv2(idd)=[];
-n2strip=length(f2is);
+    fprintf(['\n ',num2str(length(idd)),' strip DEMs have no water mask data:',f2is{idd},'\n'])
+    if n2strip>idd %there is strip files left.
+        XYb2is(idd)=[];f2is(idd)=[];fdir2is(idd)=[];dX4Sg2(idd,:)=[];datarsv2(idd)=[];
+        flagleft=1; %there is good strip DEM left
+    else
+        flagleft=0;% all strips bad.
+    end
+    n2strip=length(f2is);
 end
-fprintf(['\n ',num2str(n2strip),' strip DEMs have water mask data:',f2is{1:n2strip},'\n'])
-
+if flagleft==1
+fprintf(['\n Use these strip DEMs (have water mask data):',num2str(n2strip),' ',f2is{1:n2strip},'\n'])
+elseif flagleft==0
+    fprintf('\n None strip DEM has water mask. \n')
+    fprintf(['\n Use these strip DEMs :',num2str(n2strip),' ',f2is{1:n2strip},'\n'])
+end
 % % % Find the lowest stage DEM in all strips % % % 
 [flagstats1,idref1]=lowest(datarsv2,XYb2is);
 if ~isempty(idref1)
@@ -178,25 +198,51 @@ fprintf (['\n The lowest stage DEM in all strips:',infile])
     data.x=data.x- p(2);data.y=data.y- p(3);data.z=data.z- p(1);
 
     data0a=data;mt0a=data;mt0a.z=mt.z;
+    save lowestDEM.mat data0a -v7.3
 else
     fprintf (['\n The lowest stage DEM in all strips not found.'])
+    data0a=struct('x',[],'y',[],'z',[]);%Initialize for parallel
+    mt0a=data0a;
 end
 % % % End of finding reference DEM.
 
 res=2;
 
 % For mono images using the altimetry-imagery method
-for j=1:n%0%length(id)
+flagsect=flagsect;flagplot=flagplot; %avoid error:"An UndefinedFunction error was thrown on the workers for 'flagplot'."
+poolobj=parpool(poolsize);
+% addAttachedFiles(poolobj,{'constant.m'})
+% flagsect=flagsect
+parfor j=1:n %0%length(id)
 i=j;
-texttar=fis{j}(1:13);
+texttar=fis{j}(1:19);
 [~,filename,~]=fileparts([fdiris{j},'/',fis{j}]);
 display(['Working on mono image ',num2str(j), ': ',fdiris{j},'/',fis{j}])
 
 % % % Get water mask % % %
-M=Msv(j); %maskentropy(infile);
+%M=Msv(j); %maskentropy(infile);
+    infile=[fdiris{j},'/',fis{j}];
+    rangeov=[];
+
+    %check whether the data is multispectral image
+    name=fis{j};
+    flagfmt2=0; %panchromatic band
+    r1=strfind(name,'M1BS');
+    if ~isempty(r1); flagfmt2=1;end
+
+    ndwisv=struct('x',[],'y',[],'z',[]);%Initialize
+    if flagfmt2==1 %multispectral image
+%         clear data
+        data=multispecmono(infile,wm,ndwisv,rangeov); %given strip meta file, finding all image 1 multispectral imageries, orthrectiying, get water mask.
+
+    else %stereo orthorectified panchromatic image; or WV01 mono panchromatic image
+%         infile=  strrep([demdir,'/',f{i}],'meta.txt','dem.tif');
+        data=maskentropy(infile,wm,ndwisv,rangeov);
+    end
+    M=data;
 
 if j==137
-save testj137.mat M datarsv2 XYb2is -v7.3
+% save testj137.mat M datarsv2 XYb2is -v7.3
 end
 
 if isempty(M.z)
@@ -235,6 +281,13 @@ M1=double(M.z);M1(M1==-1)=0;
 %to do: apply the river centerline map, make sure the coverage of DEM is calculated using the river rather than all water areas.
 %done: in maskentropy.m, the river mask is the water mask within the buffer zone.
 nwx=length(M.x);nwy=length(M.y);
+%use the manually selected DEM;
+if flaglowest==1 %use the given dem;
+    iref=idlowest;
+    fprintf (['\n Use the manually given DEM as lowest stage DEM:',f2is{iref},'\n'])
+else %flaglowest = 0 or 2
+    if flaglowest == 0 
+        
 if flagstats1==1
     k=idref1;
     % Use strip dem to get shoreline elevation; need water mask to determine its water stage.
@@ -275,9 +328,12 @@ if flag1==0|| (flagsect==1&&flag1~=2)
     ratiog(k)=ratio;
 
     %check the relative stage of mono image and strip.
-    datac(2)=struct('x',[],'y',[],'z',[]);
-    datac(1)=datarsv2(k);XYbc(1)=XYb2is(k);
-    datac(2).x=Msv(j).x;datac(2).y=Msv(j).y;datac(2).z=Msv(j).z;XYbc(2)=XYbis(j);
+    %datac(2)=struct('x',[],'y',[],'z',[]);
+    %datac(1)=datarsv2(k);XYbc(1)=XYb2is(k);
+    %datac(2).x=M.x;datac(2).y=M.y;datac(2).z=M.z;XYbc(2)=XYbis(j);
+    t1=datarsv2(k);
+    datac=struct('x',{t1.x,M.x},'y',{t1.y,M.y},'z',{t1.z,M.z});
+    XYbc=[XYb2is(k);XYbis(j)];
     [flagstatsj,idrefj]=lowest(datac,XYbc);
     stagei=0;
     if flagstatsj==1&&~isempty(idrefj)
@@ -333,15 +389,25 @@ else %Use the reference for all
     iref=idref1;    
 end
 
+    elseif flaglowest==2 %use the given DEM; but to compare relative water level;
+        iref=idlowest;
+        fprintf (['\n Use the manually given DEM as lowest stage DEM:',f2is{iref},'\n'])
+        fprintf (['\n Still compare the relative water level.\n'])
+    end
+    
 % Check whether the water level of this image is higher than the reference.
 % Skip if not.
 if isempty(iref)
     warning('Lowest stage DEM strip not found.')
     continue
 else
-    datac(2)=struct('x',[],'y',[],'z',[]);
-    datac(1)=datarsv2(iref);XYbc(1)=XYb2is(iref);
-    datac(2).x=Msv(j).x;datac(2).y=Msv(j).y;datac(2).z=Msv(j).z;XYbc(2)=XYbis(j);
+    %datac(2)=struct('x',[],'y',[],'z',[]);
+    %datac(1)=datarsv2(iref);XYbc(1)=XYb2is(iref);
+    %datac(2).x=M.x;datac(2).y=M.y;datac(2).z=M.z;XYbc(2)=XYbis(j);
+    t1=datarsv2(iref);
+    datac=struct('x',{t1.x,M.x},'y',{t1.y,M.y},'z',{t1.z,M.z});
+    XYbc=[XYb2is(iref);XYbis(j)];	
+
     [flagstatsj,idrefj]=lowest(datac,XYbc);
     %if idrefj~=1||flagstatsj==0 % []~=1 -> empty logical
     if flagstatsj==1&&~isempty(idrefj)
@@ -356,6 +422,7 @@ else
         continue
     end
 end
+end %use the mannually selected DEM
 
 %load lowest stage.
 if isempty(iref)
@@ -378,7 +445,7 @@ else
     Med=~poly2mask(idx,idy,nwy,nwx); % fast, apply to each polygon one by one.
     Me=~(imdilate(Med,ones(round(30*8)))); 
     data.z(~Me|data.z==-9999)=NaN;
-    
+
     mtFile = strrep(infile,'dem.tif','matchtag.tif');
     mt=readGeotiff(mtFile);
     % Align the DEM coordinates to reference DEM using the translation parameters from coregistration.
@@ -422,7 +489,16 @@ epochorg=Y(M);
 zriv(isnan(zriv))=-9999;
 
 %Detect the outliers and mean and std
+try
 [idkpb]=outlier(odir,zriv,dempmt,epochorg,ymd);
+catch e
+     fprintf('\nThere was an error! The message was:\n%s',e.message);
+     fprintf(['\nstripmetafile is ',stripmetafile])
+save testoutlier.mat odir zriv dempmt epochorg ymd  -v7.3
+%continue %avoid continue for parallel.
+idkpb=1:length(epochorg);
+end
+
 yp=epochorg(idkpb);
 
 [LAT,LON]=polarstereo_inv(X(M),Y(M),[],[],70,-45);
@@ -431,9 +507,13 @@ output=[LAT(idkpb),LON(idkpb),double(zriv(idkpb)),(yp(:)-y0s)];
 % ofile=['rivprof',num2str(ymd),'b.dat']; %remove outlier
 %ofile=[odir,'/rivprof',num2str(ymd),satname,'bj',num2str(j),'.dat'];
 ofile=[odir,'/rivprof',texttar,'bj',num2str(j),'.dat'];
-save(ofile,'output','-ascii') 
+% save(ofile,'output','-ascii') 
+fid2 = fopen(ofile, 'w');
+fprintf(fid2,' %17.7e  %17.7e  %17.7e  %17.7e  \n',output'); %
+fclose(fid2);
 
 %plot the orthoimage and shorelines
+if 1%flagplot==1
 infile=[fdiris{j},'/',fis{j}];
 orFile = strrep(infile,'.xml','.tif');
 if ~exist(orFile,'file')
@@ -477,9 +557,9 @@ hold on;plot3(LON(idkpb),LAT(idkpb),1e9*ones(size(LAT(idkpb))),'r.','Markersize'
  view(0,90)
 box on
 hl=xlabel('Longitude ($^{\circ}$)');
-set(hl, 'Interpreter', 'latex');
+%set(hl, 'Interpreter', 'latex');
 hl=ylabel('Latitude ($^{\circ}$)');
-set(hl, 'Interpreter', 'latex');
+%set(hl, 'Interpreter', 'latex');
 % ofile=['rivloc',num2str(ymd)]; %mean and std
 %ofile=[odir,'/rivloc',num2str(ymd),'j',num2str(j)];
 ofile=[odir,'/rivloc',texttar,'j',num2str(j)];
@@ -489,8 +569,10 @@ ofile=[odir,'/rivloc',texttar,'j',num2str(j)];
 % hold on;plot3(LON(idkpb(inb)),LAT(idkpb(inb)),1e9*ones(size(LAT(idkpb(inb)))),'co','Markersize',8)
 title(texttar)
 saveas(gcf,ofile,'fig')
+end
 
 end %for j
+delete(poolobj)
 
 close all
 

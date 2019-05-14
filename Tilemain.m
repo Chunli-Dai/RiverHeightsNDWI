@@ -6,7 +6,8 @@ macdir=[];
 
 currentdir=pwd;
 addpath(genpath(currentdir));
-addpath(genpath([currentdir,'/../rivergithub2/']));
+addpath(genpath(['/home/dai.56/arcticdemapp/river/rivergithub2v2/']));
+
 % addpath(genpath([macdir,'/data/chunli/scripts/']));
 % addpath(genpath([macdir,'/data/chunli/coastline/codec2/mapformats/']));
 
@@ -26,7 +27,7 @@ load('alaska2.mat')
 else
 filename='monolist'; %'boundaries_reg31.dat';
 if ~exist(filename,'file')
-   str=sprintf('find  %s -name *[0-9].xml > %s',deblank(multidir),filename);
+   str=sprintf('find  %s -name ''*[0-9].xml'' > %s',deblank(multidir),filename);
   [status, cmdout]=system(str);
 end
 fid = fopen(filename);
@@ -66,7 +67,7 @@ end
 filename='boundaries_regall_strip.dat'; %'boundaries_reg31.dat';
 filename='striplist.dat'; %'boundaries_reg31.dat';
 if ~exist(filename,'file')
-   str=sprintf('find  %s -name *meta.txt > %s',deblank(stripdir),filename);
+   str=sprintf('find  %s -name ''*meta.txt'' > %s',deblank(stripdir),filename);
   [status, cmdout]=system(str);
 end
 fprintf ('\n Step 0: geting the boundary for all files in the region.\n')

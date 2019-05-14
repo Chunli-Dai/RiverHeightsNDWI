@@ -1,7 +1,7 @@
 function [Co]=getwidthall(odir,c,lateq,loneq)
 %Get water profile for all water masks in a folder.
 %str=deblank(['ls ',deblank(odir),'/watermask*tif']);
-  str=sprintf('find  %s -name watermask*.tif',deblank(odir));
+  str=sprintf('find  %s -name ''watermask*.tif''',deblank(odir));
   [status, cmdout]=system(str);
   Co=[];
 
@@ -20,7 +20,7 @@ function [Co]=getwidthall(odir,c,lateq,loneq)
     fprintf(['\n \n Get width for watermask ',num2str(i),':',wfile,'. '])
     [demdir,name,ext] =fileparts([strtrim(wfile)]); %eg.watermaskWV02_20160827bj80.tif
     satname{i}=name(10:13);
-    ymdg(i)=str2num(name(15:22));
+    ymdg(i)=str2num(name(15:28));
     ymd=ymdg(i);
     if strcmp(satname{i},'WV01')
             satflag=1;
@@ -32,8 +32,8 @@ function [Co]=getwidthall(odir,c,lateq,loneq)
 
     if ~exist(wfile,'file')
       warning([wfile,' not exit']);
-      continue
-    end %if
+      %continue
+    else
     %gagewidth(j)=getwidth(wfile,lateq,loneq);
     data=readGeotiff(wfile);
     gagewidthi=0;
@@ -43,16 +43,21 @@ function [Co]=getwidthall(odir,c,lateq,loneq)
     catch e
      fprintf('\nThere was an error! The message was:\n%s',e.message);
      fprintf(['\nwfile is ',wfile])
-     continue
+     %continue
+     gagewidthi=0;
     end
-    wstd=0;
-    if gagewidthi==0
-	continue
-    end
+    if gagewidthi>0
+%     wstd=0;
 %   fprintf(fid2,'%d %12.6f %12.6f %d \n',ymd,gagewidthi,wstd,satflag); %1 WV01; 0 otherwise
+    end
+    end %if
 
   end %i
   for i=1:length(C)
-    fprintf(fid2,'%d %12.6f %12.6f %d \n',ymdg(i),gagewidth(i),wstd,satflagg(i)); %1 WV01; 0 otherwise
+    wfile=C{i};
+    if gagewidth(i) >0
+       wstd=0;
+       fprintf(fid2,'%d %12.6f %12.6f %d %s \n',ymdg(i),gagewidth(i),wstd,satflagg(i), wfile); %1 WV01; 0 otherwise
+    end
   end
   save gagewidth.mat gagewidth
