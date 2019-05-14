@@ -113,7 +113,8 @@ function wm=mask2river(data)
             end % if use advanced method
             
 %             if ratio<ap2thres % squares /circles
-            if rLW >20% 10 %30
+            if rLW >40% 10 %30 
+            %40 to remove the long shape water bodies near Tanana gage
                                     
             BW2(CC.PixelIdxList{k})=BW(CC.PixelIdxList{k});
             

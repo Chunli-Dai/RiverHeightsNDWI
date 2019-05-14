@@ -11,8 +11,13 @@ fid = fopen(ifile);
 n = linecount(fid);
 fid = fopen(ifile);
 %ghf=fscanf(fid, '%f', [5, n])';
-ghf=fscanf(fid, '%f', [4, n])';
-ghf(:,5)=0;
+% ghf=fscanf(fid, '%f', [4, n])';
+% ghf(:,5)=0;
+ghf=zeros(n,5);
+for i=1:n
+   ghf(i,1:4)=fscanf(fid, '%f', [4, 1])';ifile=fgetl(fid);
+   voltext{i}=deblank(ifile);
+end
 [n1,~]=size(ghf);
 ids=1:n1;
 
@@ -27,7 +32,7 @@ ghfb=zeros(n,5);
 for i=1:n
    %ghfb(i,1:5)=fscanf(fid, '%f', [5, 1])';ifile=fgetl(fid);
    ghfb(i,1:4)=fscanf(fid, '%f', [4, 1])';ifile=fgetl(fid);
-%    voltext{i}=deblank(ifile);
+   voltextb{i}=deblank(ifile);
 end
 
 
@@ -36,6 +41,9 @@ ghf=[ghf;ghfb];
 idb=(n1+1):(n1+n2);
 idWV01=ghf(:,4)==1;
 idb=false(size(idWV01));idb((n1+1):(n1+n2))=1;
+
+voltext=[voltext(:);voltextb(:)];
+
 end
 end
 
@@ -44,7 +52,12 @@ ifile=([deblank(odir),'/gagewidth.txt']);
 fid = fopen(ifile);
 n = linecount(fid);
 fid = fopen(ifile);
-gwf=fscanf(fid, '%f', [4, n])';
+% gwf=fscanf(fid, '%f', [4, n])';
+gwf=zeros(n,4);
+for i=1:n
+   gwf(i,1:4)=fscanf(fid, '%f', [4, 1])';ifile=fgetl(fid);
+%    voltextb{i}=deblank(ifile);
+end
 gagewidth=zeros(length(ghf(:,1)),1);
 for j=1:length(ghf(:,1))
   ymd=num2str(ghf(j,1));
@@ -71,7 +84,13 @@ w2d=0;%-11.23; %meter from WGS84 TO egm08 BY Mike Durand
 %-11.23 from web https://geographiclib.sourceforge.io/cgi-bin/GeoidEval?input=64%B047%2734%22+-147%B050%2720%22&option=Submit
 pL5(1)=pL5(1)+w2d;
 
-epoch=datenum(num2str(ghf(:,1)),'yyyymmdd');
+str1=num2str(ghf(:,1));
+[nstr,mstr]=size(str1);
+if mstr==8 %old format
+    epoch=datenum(str1,'yyyymmdd');
+elseif mstr==14
+    epoch=datenum(str1,'yyyymmddHHMMSS');
+end
 % epochw=datenum(num2str(ghfw(:,1)),'yyyymmdd');
 
 %replace ghf winter times with ghfw;
@@ -214,7 +233,7 @@ ft2m=0.3048;%feet to meter
 gwid=importdata('usgsgagewidth.dat');
 %Load USGS gage time series
 for j=1:length(gwid.textdata)
-datewid{j}=[gwid.textdata{j,1}];
+datewid{j}=[gwid.textdata{j,:}];
 end
 epochwid=datenum(datewid,'yyyy-mm-ddHH:MM');%2010-06-01 03:15
 gwidh=gwid.data(:,3)*ft2m+datum; % to meter %discharge_va(ft^3/s)   chan_width(ft)      gage_height_va(ft)
@@ -238,14 +257,14 @@ plot(gh2i(idb&~idWV01&id0)+Bias,gwidi(idb&~idWV01&id0),'g>','Markersize',8,'line
 box on
 %axis([347.5 349.8 347.5 349.8]+0.5)
 legend('Bad water classification, USGS','Partly bad, USGS','Good classification, USGS')
-else
+elseif 0 %Not plot the interpolated width due to the scarcity of width field measurements.
 plot(gh2i(idb&~idWV01)+Bias,gwidi(idb&~idWV01),'m>','Markersize',8,'linewidth',3)
 end
 %ylabel('ArcticDEM width (m)');xlabel('USGS gage height (m)')
 ylabel('Width (m)');xlabel('Gage height (m)')
 hold on;plot(gwidh+Bias,gwid,'mo') %gage height, gage width
 
-
+if 0
 idp=find(idb&~idWV01);
 for j=1:length(idp)
 i=idp(j);
@@ -253,6 +272,8 @@ plot([gh2i(i)+Bias T6f(i)],[gwidi(i) gagewidth(i)],'k-')
 end
 % legend('Bad water classification','Partly bad','Good classification','USGS interpolated','USGS field measurement')
 legend('ArcticDEM','USGS interpolated','USGS field measurement')
+end
+legend('ArcticDEM','USGS field measurement')
 saveas(gcf,'gagewidthflag2','fig')
 %Width-height curve
 

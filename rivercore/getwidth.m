@@ -205,10 +205,13 @@ if (lenr-gagereach)< -gagereach*0.1
     fprintf(['\n This profile does not have a good coverage of the gage within ',num2str(gagereach),' m:',infile]);
     gagewidth=0;
 end
+%use linear interpolation instead.
+gagewidth = interp1(widthp.x,widthp.y,xobs2,'*linear',NaN);
 
 hold on;plot((SWm(id)*resr+s0)*1e-3,Wm(id)*resr,'g>');
 % hold on;plot(([xobs*resr,xobs*resr]+s0)*1e-3,[0 300],'b-')
 hold on;plot(([xobs2,xobs2])*1e-3,[0 300],'b-')
+hold on;plot(xobs2*1e-3,gagewidth,'b>')
 
 %title(filename(1:13))
 title(filename(10:22))

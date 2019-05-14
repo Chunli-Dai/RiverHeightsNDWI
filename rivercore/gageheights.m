@@ -5,19 +5,44 @@
 for k=1:2
 if k==1
 ifile=([deblank(odir),'/gageft.txt']);
-ghf=load(ifile);
+% ghf=load(ifile);
+fid = fopen(ifile);
+n = linecount(fid);
+fid = fopen(ifile);
+%ghf=fscanf(fid, '%f', [5, n])';
+% ghf=fscanf(fid, '%f', [4, n])';
+% ghf(:,5)=0;
+ghf=zeros(n,5);
+for i=1:n
+   ghf(i,1:4)=fscanf(fid, '%f', [4, 1])';ifile=fgetl(fid);
+   voltext{i}=deblank(ifile);
+end
 [n1,~]=size(ghf);
 ids=1:n1;
 
 elseif  k==2
 ifile=([deblank(odir),'/gageftb.txt']);
-ghfb=load(ifile);
+% ghfb=load(ifile);
+fid = fopen(ifile);
+n = linecount(fid);
+fid = fopen(ifile);
+ghfb=zeros(n,5);
+for i=1:n
+   %ghfb(i,1:5)=fscanf(fid, '%f', [5, 1])';ifile=fgetl(fid);
+   ghfb(i,1:4)=fscanf(fid, '%f', [4, 1])';ifile=fgetl(fid);
+   voltextb{i}=deblank(ifile);
+end
+
 [n2,~]=size(ghfb);
+
 ghf=[ghf;ghfb];
 
 idb=(n1+1):(n1+n2);
 idWV01=ghf(:,4)==1;
 idb=false(size(idWV01));idb((n1+1):(n1+n2))=1;
+
+voltext=[voltext(:);voltextb(:)];
+
 end
 end
 
@@ -34,7 +59,14 @@ w2d=0;%-11.23; %meter from WGS84 TO egm08 BY Mike Durand
 %-11.23 from web https://geographiclib.sourceforge.io/cgi-bin/GeoidEval?input=64%B047%2734%22+-147%B050%2720%22&option=Submit
 pL5(1)=pL5(1)+w2d;
 
-epoch=datenum(num2str(ghf(:,1)),'yyyymmdd');
+str1=num2str(ghf(:,1));
+[nstr,mstr]=size(str1);
+if mstr==8 %old format
+    epoch=datenum(str1,'yyyymmdd');
+elseif mstr==14
+    epoch=datenum(str1,'yyyymmddHHMMSS');
+end
+% epoch=datenum(num2str(ghf(:,1)),'yyyymmddHHMMSS');
 % epochw=datenum(num2str(ghfw(:,1)),'yyyymmdd');
 
 %replace ghf winter times with ghfw;

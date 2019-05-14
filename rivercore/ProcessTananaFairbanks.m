@@ -20,14 +20,14 @@ for k=1:2 % 1 direct method; 2 imagery-altimetry method.
 %get data list
 if k==1
     filename='proflist'; %'boundaries_reg31.dat';
-    str=sprintf('find  %s -name rivprof*sj*[0-9].dat > %s',deblank(odir),filename);
+    str=sprintf('find  %s -name ''rivprof*sj*[0-9].dat'' > %s',deblank(odir),filename);
     [status, cmdout]=system(str);
     fid2 = fopen([deblank(odir),'/gageft.txt'], 'w');
     fid3 = fopen([deblank(odir),'/gageslope.txt'], 'w');
 
 elseif k==2
     filename='proflistb'; %'boundaries_reg31.dat';
-    str=sprintf('find  %s -name rivprof*bj*[0-9].dat > %s',deblank(odir),filename);
+    str=sprintf('find  %s -name ''rivprof*bj*[0-9].dat'' > %s',deblank(odir),filename);
     [status, cmdout]=system(str);
     fid2 = fopen([deblank(odir),'/gageftb.txt'], 'w');
     fid3 = fopen([deblank(odir),'/gageslopeb.txt'], 'w');
@@ -42,9 +42,10 @@ for i=1:n
    [demdir,name,ext] =fileparts([strtrim(ifile)]);
    f{i}=[name,ext];
    fdir{i}=[demdir,'/'];%working on two regions 
-   if length(name)>=19 %rivprofWV02_20150714sj1.dat
+   if length(name)>=19 %rivprofWV02_20150714sj1.dat rivprofWV02_20150714HHMMSSsj1.dat
        satname{i}=name(8:11);
-       ymdg(i)=str2num(name(13:20));
+       %ymdg(i)=str2num(name(13:20));
+       ymdg(i)=str2num(name(13:26));
    else    %rivprof20150714sj1.dat
        satname{i}='';
        ymdg(i)=str2num(name(8:15));
@@ -239,7 +240,7 @@ end
 % idb=find(Est{2}.xp>=xl&Est{2}.xp<=xr);
 slope(1,i)=[nanmean(Est{i}.Slope)];% mean(Est{2}.Slope(idb))];
 
-fprintf(fid2,'%d %12.6f %12.6f %d \n',ymd,hgage,hstd,satflag); %1 WV01; 0 otherwise
+fprintf(fid2,'%d %12.6f %12.6f %d %s \n',ymd,hgage,hstd,satflag,ofile2); %1 WV01; 0 otherwise
 fprintf(fid3,'%d %12.6f \n',ymd,slope(1,i));
 end
 
