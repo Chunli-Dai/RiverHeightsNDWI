@@ -160,6 +160,11 @@ c=textread(metafile,'%s','delimiter','\n');
 %   c{i} = fgetl(fid);
 % end
 r=find(~cellfun(@isempty,strfind(c,'MEANSUNEL')));
+if isempty(r)
+warning(['XML format is different as anticipated.',stripmetafile])
+Mstrip=struct(); Mstrip.x=[];Mstrip.y=[];Mstrip.z=[];Mstrip.coast=[];Mstrip.n=[];
+return
+end
 c2=c{r};
 r1=strfind(c2,'>');r2=strfind(c2,'</');c2([1:r1(1),r2(1):end])='';
 meanSunEl=sscanf(c2, '%g', 1);
