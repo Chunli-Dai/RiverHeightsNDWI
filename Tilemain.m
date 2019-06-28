@@ -6,7 +6,7 @@ macdir=[];
 
 currentdir=pwd;
 addpath(genpath(currentdir));
-addpath(genpath(['/home/dai.56/arcticdemapp/river/rivergithub2/']));
+addpath(genpath([currentdir,'/../rivergithub2/']));
 % addpath(genpath([macdir,'/data/chunli/scripts/']));
 % addpath(genpath([macdir,'/data/chunli/coastline/codec2/mapformats/']));
 
@@ -111,22 +111,13 @@ end
 fid2 = fopen('stations2cnt.dat','w');
 exb=20e3;
 % for i=1
-poolobj=parpool(poolsize);
-parfor i=[1,2,3] %1:nv
-
-   workidir=['./workriv',num2str(i),'/'];
-   if ~exist(workidir,'dir')
-     mkdir(workidir)
-   end
-   cd(workidir)
-
+for i=32 %1:nv
 %   loneq=vol(i,2);lateq=vol(i,1);
     loneq=vol(i,1);lateq=vol(i,2);
 %   [xeq,yeq]=polarstereo_fwd(lateq,loneq,[], [],70,-45);
 %   rang0=[xeq-exb xeq+exb yeq-exb yeq+exb ];
 %   ts=datenum(vol(i,4),vol(i,5),vol(i,6));
 %   te=datenum(vol(i,7),vol(i,8),vol(i,9));
-    source=zeros(2,1);
     source(1:2)=[loneq,lateq];
     texteq=voltext{i};
 
@@ -146,11 +137,9 @@ parfor i=[1,2,3] %1:nv
 	end
     [Co]=ChangeRiver(i,source,texteq,range,XYbg,f,fdir,range2,XYbg2,f2,fdir2);
 	%write count count_non_frozen
-	%fprintf(fid2,'%12.6f %12.6f   %23.15e %23.15e\n',lateq,loneq,Co(2),Co(1));
+fprintf(fid2,'%12.6f %12.6f   %23.15e %23.15e\n',lateq,loneq,Co(2),Co(1));
 %             fprintf(['\n Tile ',tilefile])
 %             toc
-    cd(currentdir)
+            
 end %xid
-delete(poolobj)
-
 
