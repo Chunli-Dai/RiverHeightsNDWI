@@ -12,7 +12,7 @@ multidir='/fs/byo/howat-data5/pgc_deliv/chunli/sag/deliv3/ortho_imagery_non-max_
 % stripdir='/data3/ArcticDEM/region_*/strips/2m/';
 stripdir='/Users/chunlidai/Google Drive/NASAHydro/manuscript2/data/';
 stripdir='/home/dai.56/data2/river/2018dec03/setsm_results/strips/2m_filt001/';
-stripdir='/fs/byo/howat-data2/ArcticDEM/region*/strips/2m/';
+stripdir='/fs/byo/howat-data2/ArcticDEM/region_34_alaska_north/strips/2m/';
 tiledir=[macdir,'/fs/byo/howat-data3/ArcticDEMmosaics/'];
 tiledirnew=tiledir; %to store new downloaded dems
 
@@ -24,7 +24,7 @@ flagmono=1; %1 use mono images only; 2 use stereor
 widthstat=0;  %buffer width of a priori river mask for calculating ndwi statistics, and the buffer of tile for calculation.
 mons=5;mone=10; %mon>=5&mon<=10; %mons, start month of running/non-frozen rivers. %mone, end month of running water.
 %mons=1;mone=12; %all season.
-poolsize=1; %24;
+
 flagsect=0;  %1 work on a section of river; 0 work on a gage
 flagbuf=1; %Suggest 1; apply the river buffer or not. 1 apply; 0 do not apply. check riverbuffStep3.png, then decide.
 flaglowest=0; % use the designated dem as lowest stage DEM for retrieving height profiles. 0 don't use; 1 use; 2 use but compare stage.
@@ -42,7 +42,7 @@ comerrthres=0.25;%2;%0.2;% commission error threshold; if  comerr >= comerrthres
 		%Based on 55 images test for sag river, suggest value 0.25.
 resr=2;
 %lakearea=1000*500*4/4; %remove clusters smaller than this.
-lakearea=100*500*4/4/4; %remove clusters smaller than this. %chena river
+lakearea=100*500*4/4; %remove clusters smaller than this.
 cloudarea=1000*5*4/4; %1000*5 pixels (2m); refill holes smaller than this.
 cntmin=25*25; %unit:pixels. The size of a priori land/ocean area should be big enough to ensure reliable statistical analysis of the histogram of the region. (Liu and Jezek, 2004)
 novlmt=3; %if number of repeats <= novlmt, set the area as edges/void.
