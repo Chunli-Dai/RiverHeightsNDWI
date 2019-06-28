@@ -46,6 +46,7 @@ function [wmi]=prepwm(xout,yout,jump,prob,stepi)
         Medge=(BW==-1);
         BW(BW==-1)=0;
         Modj= bwareaopen(BW, round(lakearea/2/resr/resr)); %remove clusters of lakes 500m by 500m
+%       Modj= bwareaopen(BW, round(lakearea/2/resr/resr/4)); %remove clusters of lakes 500m by 500m;chena small segments separated by bridges -> adjust lakearea in constant.m
         Modj=int8(Modj);
         Modj(Medge)=-1;
         data=wm;data.z=Modj;
@@ -139,7 +140,7 @@ function [wmi]=prepwm(xout,yout,jump,prob,stepi)
     %Get buffer zone along river water body
 	Modj=(data.z==1)&clbuf; %remove undetected lakes or unwanted tributaries in the far field.
     %futher remove narrow rivers <80m
-    if 1 %very tricky; can remove main stream
+    if 0 %very tricky; can remove main stream; turn this off since lots of rivers are narrow.
     widsm=40;%m;any river tributar less than widsm m will be removed for the generation of buff zone.
     widsmpix=round(widsm/resr);
     Modj=imerode(Modj, ones(widsmpix));
@@ -147,11 +148,13 @@ function [wmi]=prepwm(xout,yout,jump,prob,stepi)
     Modj=imdilate(Modj, ones(widsmpix));
     end
 	Modj= bwareaopen(Modj, round(lakearea/resr/resr)); %remove small clusters
+        %Modj= bwareaopen(BW, round(lakearea/2/resr/resr/4)); %remove clusters of lakes 500m by 500m;chena small segments separated by bridges
 	rivbuf=imdilate(Modj, ones(widpix*2)); % width expansion; 
 
 	%get river mask without lake (50% (step 2) or 90% (step 3))
 	Modj=(wm1.z==1)&rivbuf;%remove undetected lakes or unwanted tributaries.
 	Modj= bwareaopen(Modj, round(lakearea/resr/resr)); %remove small clusters
+        %Modj= bwareaopen(BW, round(lakearea/2/resr/resr/4)); %remove clusters of lakes 500m by 500m;chena small segments separated by bridges
 	rivm=Modj;
 
 	wmi=wm1;

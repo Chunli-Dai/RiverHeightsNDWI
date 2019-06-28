@@ -102,7 +102,7 @@ function [XYbi,rangei]=imagebd(ifile);
     elseif flagfmt ==3
 	%/data3/ArcticDEM/region_34_alaska_north/strips/2m/WV02_20160806_103001005A286A00_103001005A1A8300_seg1_2m_meta.txt
         r=find(~cellfun(@isempty,strfind(c,vstr3(1))));
-        Xbs=deblank(strrep(c{r(1)},vstr3{1},'')) 
+        Xbs=deblank(strrep(c{r(1)},vstr3{1},''));
 	if ~isempty(Xbs)
         Xb=strread(Xbs,'%d');
         r=find(~cellfun(@isempty,strfind(c,vstr3(2))));

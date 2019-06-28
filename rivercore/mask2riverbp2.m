@@ -17,18 +17,6 @@ function wm=mask2river(data)
     wm.x=data.x(idx);wm.y=data.y(idy);BW=data.z(idy,idx);
     Medge=(BW==-1);
     BW(BW==-1)=0;
-
-    %OUTPUT 
-    [m,n]=size(BW);
-    if ~( min([m,n])>2 )
-      %Attention: could be a dry out river.
-      warning(['mask2river: water cluster all removed.'])
-      wm=dataorg;
-      wm.z=zeros(size(dataorg.z),'int8'); %could be a dry out river.
-      wm.z(dataorg.z==-1)=int8(-1); %keep the edge for lowest.m
-      %wm.z=-1*ones(size(dataorg.z),'int8');  %must be -1, no valid data;affect multispecstrip.m and lowest.m
-      return
-    end
     
     resr=abs(data.x(2)-data.x(1));
     narea=round(width2*width2/resr/resr);
@@ -162,37 +150,6 @@ function wm=mask2river(data)
 %       fprintf(['\n River centerline file clsv2.mat found; Using SWOT algorithm in mask2river.m. ']);
 
         [clx,cly]=polarstereo_fwd(c.Y,c.X,[], [],70,-45);
-        if isfield(c, 'widave')
-        widave=c.widave;
-        else
-            % use a fixed max_distance
-            widave=20;
-        end
-        
-        %river buffer; refers to prepwm.m
-        %get bufferzone along river centerline, to remove other tributaries.
-        width80=widave;
-        resx=mean(data.x(2:end)-data.x(1:end-1));resy=mean(data.y(2:end)-data.y(1:end-1));
-        resr=mean([abs(resx),abs(resy)]);
-        buf=zeros(size(BW));
-        %polar stereographic coordinates to image coordinates.
-        [ny,nx]=size(BW);
-        clear cl
-        cl(:,1)=round((clx-wm.x(1))/resx)+1;
-        cl(:,2)=round((cly-wm.y(1))/resy)+1;
-        M=cl(:,1)>=1&cl(:,1)<=nx&cl(:,2)>=1&cl(:,2)<=ny;
-        cl(~M,:)=[];
-%       buf(cl(:,2),cl(:,1))=1;
-        for j=1:length(cl(:,1))
-        buf(cl(j,2),cl(j,1))=1;
-        end
-        widpix=round(width80/resr);
-        ncl=3; % expand along centerline by ncl times; try 10, 5 3
-        widpix2=round(width80/resr*ncl);
-        clbuf= imdilate(buf, ones(widpix2*2)); % width expansion
-              
-        if 0 %SWOT algorithm
-        %step 1 : calculating distances of pixels to centerline nodes, and assign the closest node.
         %reduce centerline resolution to 200 m node interval
         S = [0; cumsum(sqrt(diff(clx(:)).^2+diff(cly(:)).^2))];
         rescl=nanmean(S(2:end)-S(1:end-1));
@@ -205,6 +162,14 @@ function wm=mask2river(data)
         S = [0; cumsum(sqrt(diff(clx(:)).^2+diff(cly(:)).^2))];
         rescl=nanmean(S(2:end)-S(1:end-1));
         
+        if isfield(c, 'widave')
+        widave=c.widave;
+        else
+            % use a fixed max_distance
+            widave=20;
+        end
+        
+        %step 1 : calculating distances of pixels to centerline nodes, and assign the cloest node.
         max_distance=max(widave,nodeint+1);
         [X,Y]=meshgrid(wm.x,wm.y);
         p1=[X(logical(BW)), Y(logical(BW))];
@@ -218,13 +183,12 @@ function wm=mask2river(data)
         M=Zcl<=max_distance;
 %         figure;plot(p1(M,1)*1e-3,p1(M,2)*1e-3,'.')
         %get the pixel matrix
-        [ny,nx]=size(BW);
         BW2a=zeros(size(BW));
         x0=wm.x(1);dx=(wm.x(end)-wm.x(1))/(length(wm.x)-1);
         y0=wm.y(1);dy=(wm.y(end)-wm.y(1))/(length(wm.y)-1);
-        idx=round((p1(M,1)-x0)/dx)+1;
-        idy=round((p1(M,2)-y0)/dy)+1;
-        BW2a(idy(:)+(idx(:)-1)*ny)=1;
+        idx=(p1(M,1)-x0)/dx+1;
+        idy=(p1(M,2)-y0)/dy+1;
+        BW2a(idy,idx)=1;
 % 	save t1.mat -v7.3
         
         %step 2b find the cluster that's contiguous with the dominant
@@ -233,7 +197,8 @@ function wm=mask2river(data)
         CC = bwconncomp(BW2a);
         segsize=zeros(CC.NumObjects,1);
         for k=1:CC.NumObjects
-            segsize(k)=length(CC.PixelIdxList{k});
+            CC.PixelIdxList{k}
+            segsize(k)=k;
         end
         [~,k]=max(segsize);
         BW3=zeros(size(BW));
@@ -242,6 +207,7 @@ function wm=mask2river(data)
         
         %find the contiguous cluster
         CC = bwconncomp(BW);
+        segsize=zeros(CC.NumObjects,1);
         BW4=false(size(BW));
         for k=1:CC.NumObjects
             BW3=zeros(size(BW));
@@ -253,37 +219,39 @@ function wm=mask2river(data)
             if overlap >=1 
                 BW4=BW4|BW3;
                 ksv=k;
-                break
-            end
-        end
-        BW3=BW4;
-        
-        else %Modified SWOT algorithm
-            %Keep any cluster that contains the given river centerline.
-          %find the contiguous cluster
-        CC = bwconncomp(BW);
-        BW4=false(size(BW));
-        for k=1:CC.NumObjects
-            BW3=zeros(size(BW));
-            BW3(CC.PixelIdxList{k})=BW(CC.PixelIdxList{k});
-            
-            %check if this cluster is contiguous with the dominant segment.
-            overlap=sum(sum(BW3&buf));
-            
-            if overlap >=1 
-                BW4=BW4|BW3;
-                ksv=k;
 %                 break
             end
         end
-        BW3=BW4;            
-        end
+%         BW3=zeros(size(BW));
+%         BW3(CC.PixelIdxList{ksv})=BW(CC.PixelIdxList{ksv}); 
+        BW3=BW4;
         
-
+        %add river buffer; refers to prepwm.m
+        %get bufferzone along river centerline, to remove other tributaries.
+        width80=widave;
+        resx=mean(data.x(2:end)-data.x(1:end-1));resy=mean(data.y(2:end)-data.y(1:end-1));
+        resr=mean([abs(resx),abs(resy)]);
+        buf=zeros(size(BW));
+        %polar stereographic coordinates to image coordinates.
+        [ny,nx]=size(BW);
+        clear cl
+        cl(:,1)=round((clx-wm.x(1))/dx)+1;
+        cl(:,2)=round((cly-wm.y(1))/dy)+1;
+        M=cl(:,1)>=1&cl(:,1)<=nx&cl(:,2)>=1&cl(:,2)<=ny;
+        cl(~M,:)=[];
+%       buf(cl(:,2),cl(:,1))=1;
+        for j=1:length(cl(:,1))
+        buf(cl(j,2),cl(j,1))=1;
+        end
+        widpix=round(width80/resr);
+        ncl=3; % expand along centerline by ncl times; try 10, 5 3
+        widpix2=round(width80/resr*ncl);
+        clbuf= imdilate(buf, ones(widpix2*2)); % width expansion
+        
         BW2=BW3&clbuf;
         BW2(Medge)=-1;
         wm.z=BW2;
-                
+        
     end
 	
     %OUTPUT 
@@ -304,3 +272,4 @@ function wm=mask2river(data)
     
 return
 end
+

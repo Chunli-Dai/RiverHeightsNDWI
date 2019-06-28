@@ -90,6 +90,7 @@ es = 'SW'; % exit sides
 es = 'WE'; % START stream at W, End stream at E.
 es ='EW';
 es = getes(data);
+fprintf(['\nRiver orientation is ',es,'.\n'])
 plotornot=0; %1 plot;0 not plot
 % 3a. Compute the centerline
 [cl, Icl] = centerline_from_mask(data.z,es,Wn,plotornot);
