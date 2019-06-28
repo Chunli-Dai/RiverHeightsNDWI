@@ -5,8 +5,8 @@ macdir='/Users/chunlidai/surge/';
 macdir=[];
 
 currentdir=pwd;
-addpath(genpath(currentdir));
-addpath(genpath([currentdir,'/../rivergithub2/']));
+%addpath(genpath(currentdir));
+addpath(genpath(['/home/dai.56/arcticdemapp/river/rivergithub2/']));
 % addpath(genpath([macdir,'/data/chunli/scripts/']));
 % addpath(genpath([macdir,'/data/chunli/coastline/codec2/mapformats/']));
 
@@ -111,7 +111,7 @@ end
 fid2 = fopen('stations2cnt.dat','w');
 exb=20e3;
 % for i=1
-for i=32 %1:nv
+for i=[1] %[2]
 %   loneq=vol(i,2);lateq=vol(i,1);
     loneq=vol(i,1);lateq=vol(i,2);
 %   [xeq,yeq]=polarstereo_fwd(lateq,loneq,[], [],70,-45);
@@ -142,4 +142,3 @@ fprintf(fid2,'%12.6f %12.6f   %23.15e %23.15e\n',lateq,loneq,Co(2),Co(1));
 %             toc
             
 end %xid
-
