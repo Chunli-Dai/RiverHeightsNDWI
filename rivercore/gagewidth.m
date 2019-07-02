@@ -76,7 +76,7 @@ end %j
 % ghfw=load('gageft.txt'); % Winter data
 pL5=[0 0 0];%[1.8855   0 0]; %Vertical offset between ArcticDEM DEM (2011/10/8) with LiDAR.
 %Control surface:  FAirport2.gmt FAirport3.gmt Pondsh.gmt road.gmt
-gh2=importdata('usgsgage.txt');
+gh2=importdata('usgsgage.txt',' ');
 ft2m=0.3048;%feet to meter
 
 % Vertical datum: WGS84
@@ -230,7 +230,7 @@ ylabel('ArcticDEM width (m)');xlabel('ArcticDEM height (m)')
 saveas(gcf,'gagewidthflag','fig')
 
 ft2m=0.3048;%feet to meter
-gwid=importdata('usgsgagewidth.dat');
+gwid=importdata('usgsgagewidth.dat',' ');
 %Load USGS gage time series
 for j=1:length(gwid.textdata)
 datewid{j}=[gwid.textdata{j,:}];

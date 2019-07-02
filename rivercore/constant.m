@@ -42,7 +42,7 @@ comerrthres=0.25;%2;%0.2;% commission error threshold; if  comerr >= comerrthres
 		%Based on 55 images test for sag river, suggest value 0.25.
 resr=2;
 %lakearea=1000*500*4/4; %remove clusters smaller than this.
-lakearea=100*500*4/4/4; %remove clusters smaller than this. %chena river
+lakearea=100*500*4/4/4/2; %remove clusters smaller than this. %chena river
 cloudarea=1000*5*4/4; %1000*5 pixels (2m); refill holes smaller than this.
 cntmin=25*25; %unit:pixels. The size of a priori land/ocean area should be big enough to ensure reliable statistical analysis of the histogram of the region. (Liu and Jezek, 2004)
 novlmt=3; %if number of repeats <= novlmt, set the area as edges/void.
