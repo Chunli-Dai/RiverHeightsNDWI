@@ -230,7 +230,7 @@ ylabel('ArcticDEM width (m)');xlabel('ArcticDEM height (m)')
 saveas(gcf,'gagewidthflag','fig')
 
 ft2m=0.3048;%feet to meter
-gwid=importdata('usgsgagewidth.dat',' ');
+gwid=importdata('usgsgagewidth.dat');
 %Load USGS gage time series
 for j=1:length(gwid.textdata)
 datewid{j}=[gwid.textdata{j,:}];
