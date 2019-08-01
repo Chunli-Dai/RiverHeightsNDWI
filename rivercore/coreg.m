@@ -242,7 +242,7 @@ for j=1:length(idregion) % %hi
     %  	[dx,dy,sigma]=vmimc(infile1,infile2) 
       [z2out,p,sigma] = coregisterdems(refdem.x,refdem.y,double(datarefz),tardem.x,tardem.y,double(datatarz));
         rmsreg2(j)=sigma;
-      if sum(size(z2out)~=size(refdem.z)) || sigma>10 || isnan(sigma) %control parameter
+      if sum(size(z2out)~=size(refdem.z)) || sigma>10 || isnan(sigma) || max(abs(p(2:3))) >= 10 %control parameter
           warning(['coregistration failure',infile]); p=zeros(3,1);
           idd=[idd;j];
       else
@@ -312,8 +312,9 @@ end % if j
 
 % remove strips that are not coregistered.
 if 1  %hi; still use the data even if the coregistration is bad, dx4=0.
-%remove data is the too much cropped data.
-idd=idd2;
+%remove data that are cropped too much.
+%idd=idd2;
+idd=[idd(:);idd2(:)];
 idregion(idd)=[];%XYb(idd)=[];dzxy(idd)=[];
 dzxyd(idd,:)=[];%rmsreg(idd)=[];
 dX4Sg(idd,:)=[];rmsreg2(idd)=[];
