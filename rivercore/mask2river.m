@@ -189,7 +189,15 @@ function wm=mask2river(data)
         widpix=round(width80/resr);
         ncl=3; % expand along centerline by ncl times; try 10, 5 3
         widpix2=round(width80/resr*ncl);
+        
+        if ~exist('riverbuff.tif','file')
+            fprintf(['\nWarning: expand centerline by width of ',num2str(width80),' m as buffer.\n'])
         clbuf= imdilate(buf, ones(widpix2*2)); % width expansion
+        else %use riverbuff.tif
+            bufpre=readGeotiff('riverbuff.tif');
+            tz = interp2(bufpre.x,bufpre.y,int8(bufpre.z),wm.x,wm.y','*nearest',0);%
+            clbuf=double(tz);
+        end
               
         if 0 %SWOT algorithm
         %step 1 : calculating distances of pixels to centerline nodes, and assign the closest node.
