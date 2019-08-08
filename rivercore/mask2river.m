@@ -151,6 +151,7 @@ function wm=mask2river(data)
             end
             
     end
+    BW2=int8(BW2);%BW2 can't be logical, since logical (-1)=1;
     BW2(Medge)=-1;
     wm.z=BW2;
 
@@ -190,13 +191,17 @@ function wm=mask2river(data)
         ncl=3; % expand along centerline by ncl times; try 10, 5 3
         widpix2=round(width80/resr*ncl);
         
-        if ~exist('riverbuff.tif','file')
-            fprintf(['\nWarning: expand centerline by width of ',num2str(width80),' m as buffer.\n'])
-        clbuf= imdilate(buf, ones(widpix2*2)); % width expansion
-        else %use riverbuff.tif
-            bufpre=readGeotiff('riverbuff.tif');
-            tz = interp2(bufpre.x,bufpre.y,int8(bufpre.z),wm.x,wm.y','*nearest',0);%
-            clbuf=double(tz);
+        if 0 %do not apply centerline buffer here, since the river buffer has already been applied in multispecmono.m
+            if ~exist('riverbuff.tif','file')
+                fprintf(['\nWarning: expand centerline by width of ',num2str(width80),' m as buffer.\n'])
+            clbuf= imdilate(buf, ones(widpix2*2)); % width expansion
+            else %use riverbuff.tif
+                bufpre=readGeotiff('riverbuff.tif');
+                tz = interp2(bufpre.x,bufpre.y,int8(bufpre.z),wm.x,wm.y','*nearest',0);%
+                clbuf=double(tz);
+            end
+        else
+            clbuf=true(size(buf));
         end
               
         if 0 %SWOT algorithm
@@ -289,7 +294,8 @@ function wm=mask2river(data)
         
 
         BW2=BW3&clbuf;
-        BW2(Medge)=-1;
+        BW2=int8(BW2);%BW2 can't be logical, since logical (-1)=1;
+        BW2(Medge|~clbuf)=-1;
         wm.z=BW2;
                 
     end

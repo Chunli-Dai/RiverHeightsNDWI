@@ -25,7 +25,8 @@ toc
 
 Md1 = imdilate(Modfil, ones(3));
 M=logical(Md1-Modfil);
-M=M&~Medgs; 
+%M=M&~Medgs; 
+M=M&~(Medgs2|Medgs); 
 
-Modfil(Medgs2)=-1;  %keep the edge for lowest.m
+Modfil(Medgs2|Medgs)=-1;  %keep the edge for lowest.m
 end
