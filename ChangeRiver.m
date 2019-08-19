@@ -108,7 +108,13 @@ ranget=round(rang0/resr)*resr;rang0=ranget;
 tx=ranget(1):resr:ranget(2);ty=ranget(4):-resr:ranget(3);
 xout=tx;yout=ty;
 
-[c,widave]=getcl(rang0,loneq,lateq);
+if ~exist('clsv2.mat','file') %if a centerline file is not given, get the centerline from Elizabeth's Database.
+    try
+    [c,widave]=getcl(rang0,loneq,lateq);
+    catch e
+      fprintf('There was an error with getcl.m! The message was:\n%s',e.message);      
+    end
+end
 
 x=[range(:,1) range(:,2) range(:,2) range(:,1) range(:,1) ];y=[range(:,4) range(:,4) range(:,3) range(:,3) range(:,4) ];
 % id=find(range(:,1)>xeq-exb & range(:,2)<xeq+exb & range(:,3)>yeq-exb & range(:,4)<yeq+exb);
