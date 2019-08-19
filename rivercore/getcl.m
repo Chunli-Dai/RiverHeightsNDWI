@@ -21,8 +21,8 @@ bbox=[min(lon) min(lat); max(lon) max(lat)];
 range=[bbox(1,1) bbox(2,1) bbox(1,2) bbox(2,2)];
 x0=[range(1) range(2) range(2) range(1) range(1) ];y0=[range(4) range(4) range(3) range(3) range(4) ];
 % figure;hold all;plot(x0,y0,'-','linewidth',3)
-addpath(genpath(['/Users/chunlidai/surge/home/dai.56/arcticdemapp/river/rivergithub2v2/']))
-addpath(genpath(['/home/dai.56/arcticdemapp/river/rivergithub2v2/']))
+% addpath(genpath(['/Users/chunlidai/surge/home/dai.56/arcticdemapp/river/rivergithub2v2/']))
+% addpath(genpath(['/home/dai.56/arcticdemapp/river/rivergithub2v2/']))
 S2=shaperead('NA_Merge.shp','BoundingBox',bbox);%10 minutes
 % figure;mapshow(S2);
 % figure;plot(S2(:).X,S2(:).Y,'k-');
@@ -150,7 +150,8 @@ ide=find(dists<2*ds);
 isegcs1e=ide(ide~=iseggvn);
 idcs1e=zeros(size(isegcs1e));
 for j=1:length(isegcs1e)
-idcs1e(j)=length(datarsv(isegcs1e).cl_id);%end point id.
+    js=isegcs1e(j);
+idcs1e(j)=length(datarsv(js).cl_id);%end point id.
 end
 isegcs1=[isegcs1(:);isegcs1e(:)];%seg id
 idcs1=[idcs1(:);idcs1e(:)]; %point id
@@ -216,7 +217,8 @@ ide=find(dists<2*ds);
 isegcs1e=ide(ide~=iseggvn);
 idcs1e=zeros(size(isegcs1e));
 for j=1:length(isegcs1e)
-idcs1e(j)=length(datarsv(isegcs1e).cl_id);%end point id.
+    js=isegcs1e(j);
+idcs1e(j)=length(datarsv(js).cl_id);%end point id.
 end
 isegcs1=[isegcs1(:);isegcs1e(:)];%seg id
 idcs1=[idcs1(:);idcs1e(:)]; %point id
