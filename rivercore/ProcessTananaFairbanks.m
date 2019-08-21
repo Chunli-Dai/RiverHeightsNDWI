@@ -35,6 +35,7 @@ end
 
 fid = fopen(filename);
 n = linecount(fid);
+if n==0; continue;end
 fid = fopen(filename);
 ymdg=zeros(n,1);
 for i=1:n
