@@ -41,7 +41,11 @@ idb=(n1+1):(n1+n2);
 idWV01=ghf(:,4)==1;
 idb=false(size(idWV01));idb((n1+1):(n1+n2))=1;
 
+if ~exist('voltext','var')
+  voltext=[voltextb(:)];
+else
 voltext=[voltext(:);voltextb(:)];
+end
 
 end
 end
