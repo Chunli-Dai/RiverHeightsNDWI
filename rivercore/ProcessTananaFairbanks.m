@@ -200,6 +200,11 @@ profx=p.x(Est{i}.iSolUse);profy=Est{i}.Hc(Est{i}.iSolUse);
 output=[profx(:)*1e3,profy(:)]; %m m
 save(ofile2,'output','-ascii')
 
+ofile3=strrep(rivprof1,'.dat','unft.dat'); 
+profx=p.x(Est{i}.Use);profy=Est{i}.Hhat(Est{i}.Use);
+output=[profx(:)*1e3,profy(:)]; %m m
+save(ofile3,'output','-ascii')
+
 % xming(i)=min(p.x(Est{1}.iSolUse));xmaxg(i)=max(p.x(Est{1}.iSolUse));
 % 
 % xmin=max([xmin min(p.x(Est{i}.iSolUse))]);
