@@ -16,6 +16,7 @@ c=shaperead('tan_cl_Close7.shp');
 c=c(1); %One line; .X (longitude), .Y (latitude).
 end
 
+
 for k=1:2 % 1 direct method; 2 imagery-altimetry method.
 %get data list
 if k==1
@@ -90,6 +91,23 @@ if ~exist('Elevations','dir')
   mkdir('Elevations')
 end
 
+%recover the longitude latitude of centerline nodes.
+dc=p.dx*1e3; %m 
+[clx,cly]=polarstereo_fwd(c.Y(:),c.X(:),[], [],70,-45);
+[clx0,cly0,S]=interpcl(clx,cly,dc);
+[lat0,lon0]=polarstereo_inv(clx0,cly0,[], [],70,-45);
+
+%Densify the centerline the same way as in getwidth.m 
+%and get the streamwise coordinate of the gage
+dc2=2;% centerline node interval has to be a aliquot part of 100, and 100/2 (the node space in ProcessData.m)
+[clx2,cly2,S2]=interpcl(clx,cly,dc2);
+[xeq,yeq]=polarstereo_fwd(lateq,loneq,[],[],70,-45);
+dist=sqrt( (yeq-cly2(:)).^2 + (xeq - clx2(:)).^2);
+[distmin,k2]=min(dist);
+xobs2=S2(k2);
+fprintf(['\n Gage centerline coordinate xobs2:',num2str(xobs2),'\n']);
+
+
 %% first pass
 for i=1:n
 % Href{1}=nan(1,p.N); Href{2}=nan(1,p.N);
@@ -104,7 +122,8 @@ for i=1:n
     Href{i}=Est{i}.Hc;
 end
 [Est,Data,xobs]=ProcessData(c,s,reAttach,p,Href,'Fairbanks','SLM',lateq,loneq); % 5 km might be too short for this
-fprintf(['\n Gage centerline coordinate xobs:',num2str(xobs),'\n']);
+% fprintf(['\n Gage centerline coordinate xobs:',num2str(xobs),'\n']);
+xobs=xobs2*1e-3;
 %%
 % xobs=93; % from CL #7 from Rui ;  USGS gage loneq=-147.8389; lateq=64.7928
 % using Vdatum, 404.93' above NAVD88 = 400.67' above EGM08
@@ -197,12 +216,19 @@ saveas(gcf,ofile,'fig')
 
 ofile2=strrep(rivprof1,'.dat','ft.dat'); %rivprofWV02_20180626bj83ft.dat rivprofWV02_20180626bj83ft.fig
 profx=p.x(Est{i}.iSolUse);profy=Est{i}.Hc(Est{i}.iSolUse);
-output=[profx(:)*1e3,profy(:)]; %m m
+id1=(profx*1e3-0)/(p.dx*1e3)+1; %index of S at the selected nodes. S=0+(k-1)*p.dx*1e3
+id1=round(id1);
+M=id1>=1&id1<=length(lon0);
+output=[profx(M(:))'*1e3,profy(M(:))',lon0(id1(M(:))),lat0(id1(M(:)))]; %m m
+% output=[profx(:)*1e3,profy(:),lon0(id1),lat0(id1)]; %m m
 save(ofile2,'output','-ascii')
 
 ofile3=strrep(rivprof1,'.dat','unft.dat'); 
 profx=p.x(Est{i}.Use);profy=Est{i}.Hhat(Est{i}.Use);
-output=[profx(:)*1e3,profy(:)]; %m m
+id1=(profx*1e3-0)/(p.dx*1e3)+1; %index of S at the selected nodes. S=0+(k-1)*p.dx*1e3
+id1=round(id1);%the last index can exceed the length of lon0, since px can be beyond the centerline length.
+M=id1>=1&id1<=length(lon0);
+output=[profx(M(:))'*1e3,profy(M(:))',lon0(id1(M(:))),lat0(id1(M(:)))]; %m m
 save(ofile3,'output','-ascii')
 
 % xming(i)=min(p.x(Est{1}.iSolUse));xmaxg(i)=max(p.x(Est{1}.iSolUse));
@@ -217,26 +243,37 @@ if isfield(Est{i}, 'xp')
  %use fitting line for average
     gagereach=1;%1km
     if 0 %Do not use this. This keep the near ends of fitting function, which can be curved/ inaccurate.
-    id=find(abs(Est{i}.xp-xobs)<=gagereach/2.);nn=length(id);
-    % idb=find(abs(Est{2}.xp-xobs)<=500e-3);nnb=length(idb);
-    hest=Est{i}.yp(id);heststd=Est{i}.stdres*ones(size(hest));
-    % hestb=Est{2}.yp(idb);heststdb=Est{2}.stdres*ones(size(hestb));
-    xsr=Est{i}.xp(id);xsrdx=Est{1}.xp(2)-Est{1}.xp(1);lenr=nn*abs(xsrdx);%length of selected reach
-    if (lenr-gagereach)<-gagereach*0.1; 
-    warning(['i=',num2str(i),';',num2str(ymd),' This profile does not have a good coverage of the gage within ',num2str(gagereach),' km']);
-    continue;
-    end
+        id=find(abs(Est{i}.xp-xobs)<=gagereach/2.);nn=length(id);
+        % idb=find(abs(Est{2}.xp-xobs)<=500e-3);nnb=length(idb);
+        hest=Est{i}.yp(id);heststd=Est{i}.stdres*ones(size(hest));
+        % hestb=Est{2}.yp(idb);heststdb=Est{2}.stdres*ones(size(hestb));
+        xsr=Est{i}.xp(id);xsrdx=Est{1}.xp(2)-Est{1}.xp(1);lenr=nn*abs(xsrdx);%length of selected reach
+        if (lenr-gagereach)<-gagereach*0.1; 
+        warning(['i=',num2str(i),';',num2str(ymd),' This profile does not have a good coverage of the gage within ',num2str(gagereach),' km']);
+        continue;
+        end
+        hgage=nanmean(hest);hstd=Est{i}.stdres; %1./nn*sqrt(sum(heststd.^2));
     else %Use this, which trim off the ends.
-    x2=p.x(Est{i}.iSolUse);y2=Est{i}.Hc(Est{i}.iSolUse);
-    id=find(abs(x2-xobs)<=gagereach/2.);nn=length(id);
-    hest=y2(id);heststd=Est{i}.stdres*ones(size(hest));
-    xsrdx=p.dx;lenr=nn*abs(xsrdx);
-    if (lenr-gagereach)< -gagereach*0.1
-    warning(['i=',num2str(i),';',num2str(ymd),' This profile does not have a good coverage of the gage within ',num2str(gagereach),' km']);
-    continue;
+        x2=p.x(Est{i}.iSolUse);y2=Est{i}.Hc(Est{i}.iSolUse);
+        id=find(abs(x2-xobs)<=gagereach/2.);nn=length(id);
+        hest=y2(id);heststd=Est{i}.stdres*ones(size(hest));
+        xsrdx=p.dx;lenr=nn*abs(xsrdx);
+        if (lenr-gagereach)< -gagereach*0.1
+        warning(['i=',num2str(i),';',num2str(ymd),' This profile does not have a good coverage of the gage within ',num2str(gagereach),' km']);
+        continue;
+        end
+        hgage=nanmean(hest);hstd=Est{i}.stdres; %1./nn*sqrt(sum(heststd.^2));
+        hold on;plot(x2(id),y2(id),'k>')
+        hold on;plot(xobs,hgage,'k*','Markersize',12) %averaged height
+       
+        %use linear interpolation instead.
+        hgageb = interp1(x2,y2,xobs,'*linear',NaN);
+        hold on;plot(xobs,hgageb,'r*','Markersize',12) %interpolated height
+        fprintf(['\n Height from linear interpolation - height from average=',num2str(hgageb-hgage),' m.\n'])
+        saveas(gcf,ofile,'fig')
+
+        hgage=hgageb;
     end
-end
- hgage=nanmean(hest);hstd=Est{i}.stdres; %1./nn*sqrt(sum(heststd.^2));
 
 % hgageb=mean(hestb);hstdb=Est{2}.stdres;  %1./nnb*sqrt(sum(heststdb.^2));
 

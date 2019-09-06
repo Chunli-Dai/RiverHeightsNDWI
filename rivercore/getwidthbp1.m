@@ -1,4 +1,3 @@
-
 function [gagewidth,widthp]=getwidth(data,infile,c,lateq,loneq);
 %function [gagewidth]=getwidth(infile,lateq,loneq)
 % Given water mask to get width profile
@@ -94,20 +93,14 @@ end
 % If the input centerline (green) has too large interval (40 m spacing), the smoothed line is too far from river in width_from_mask.
 S = [0; cumsum(sqrt(diff(clx(:)).^2+diff(cly(:)).^2))];
 rescl=nanmean(S(2:end)-S(1:end-1));
-if 1 %rescl > 2*resr %
-    fprintf(['\n Densify the centerline for width calculation!'])
-    if 0 % old way, distance between centerline nodes is not a constant integer 
-        lat=cly;lon=clx;maxdiff=resr;
-        [latout,lonout] = interpm(lat,lon,maxdiff);
-        clx=lonout;cly=latout;
-    else %make sure the centerline node interval is a constant
-        dc=2;% centerline node interval has to be a aliquot part of 100, and 100/2 (the node space in ProcessData.m)
-        [clx,cly,S]=interpcl(clx,cly,dc);
-    end 
+if rescl > 2*resr %
+fprintf(['\n Densify the centerline for width calculation!'])
+lat=cly;lon=clx;maxdiff=resr;
+[latout,lonout] = interpm(lat,lon,maxdiff);
+clx=lonout;cly=latout;
 end
-% S = [0; cumsum(sqrt(diff(clx(:)).^2+diff(cly(:)).^2))];
-%figure;plot(diff(S)) is not a constant because two interpolated nodes could include a turning original node inbetween.
-rescl=nanmean(S(2:end)-S(1:end-1));%average node distances of centerline.%should be the same as dc.
+S = [0; cumsum(sqrt(diff(clx(:)).^2+diff(cly(:)).^2))];
+rescl=nanmean(S(2:end)-S(1:end-1));%average node distances of centerline.
 
 %polar stereographic coordinates to image coordinates.
 [ny,nx]=size(data.z);
@@ -130,19 +123,8 @@ lencl=length(cl(:,1));
 
 %the coordinate of first point in cropped centerline along input
 %centerline.
-% id1=find(M==1);k=id1(1); %same as ks
-s0=S(ks);
-
-%Index (integer) of cl, node streamwise coordinates have to be the same as the nodes in ProcessData.m
-dx=100;  %has to be p.dx=.1;    in ProcessTananaFairbanks.m
-Sp=(0+dx/2):dx:max(S); %m middle pionts of the 100-m Nodes in height profile in ProcessData.m
-idp=find(Sp>=S(ks)&Sp<=S(ke)); %index of Sp within the image domain.
-id=(Sp(idp)-0)/rescl+1; %index of S at the Sp nodes.
-idimage=round(id)-ks+1; % index of the cropped centerline, cl (index within the image).
-bkpts=idimage(idimage>=1&idimage<=lencl); %end points (nodes) of each segments for width calculation.
-bkptsc=round(bkpts(1:end-1)+(dx/2)/rescl); %center of each segment, index of cl
-bkptsco=bkptsc+ks-1; %index of clx, cly, S.
-[lat0,lon0]=polarstereo_inv(clx(bkptsco),cly(bkptsco),[], [],70,-45);
+id1=find(M==1);k=id1(1);
+s0=S(k);
 
 % spacing = Wn/2; %spacing of centerline, in pixels.
 spnode=100; % spacing in meter
@@ -157,14 +139,7 @@ fprintf(['\nThe spacing of centerline is ',num2str(spacing*rescl),' instead of '
 end
 
 try
-% [Wm, SWm] = width_from_mask(data.z, cl, spacing);
-[Wm, SWm] = width_from_mask(data.z, cl, bkpts);
-%SWm streamwise coordinate is based on the new interopolated centerline
-%nodes, it's different from the given centerline due to the curves. Use the
-%corresponding coordinates along original centerline to be consistent with
-%the nodes in ProcessData.m
-SWm=(S(bkptsco)-s0)/resr; SWm=SWm(:);%to be compatible with old version.
-
+[Wm, SWm] = width_from_mask(data.z, cl, spacing);
 catch e
      fprintf('width_from_mask error! The message was:\n%s',e.message);
      gagewidth=0;return
@@ -177,11 +152,11 @@ fprintf(['\n Width nodes number: ',num2str(length(widthp.x)),'; estimate:',num2s
 
 ofile=strrep(infile,'watermask','widprof'); %watermaskWV02_20150714bj73.tif widprofWV02_20150714bj73.dat
 ofile=strrep(ofile,ext,'.dat');
-output=[widthp.x(:), widthp.y(:),lon0(:),lat0(:)]; %distance along centerline (m), width(m)
+output=[widthp.x(:), widthp.y(:)]; %distance along centerline (m), width(m)
 save(ofile,'output','-ascii')
 
 figure
-plot((widthp.x)*1e-3,widthp.y,'r');
+plot((SWm*resr+s0)*1e-3,Wm*resr,'r');
 xlabel('streamwise distance (km)'); ylabel('width (m)')
 legend('W_m_a_s_k')
 
@@ -206,10 +181,9 @@ xobs2=S(k);
 xobs1=xobs*resr+s0;
 df=xobs2-(xobs*resr+s0);
 if M % gage within image boundary
-% fprintf(['\n Gage coordinate along input centerline, xobs1:',num2str(xobs1),', xobs2:',num2str(xobs2),', difference:',num2str(df),''])
-fprintf(['\n Gage coordinate along input centerline, xobs2: ',num2str(xobs2),' m.\n'])
+fprintf(['\n Gage coordinate along input centerline, xobs1:',num2str(xobs1),', xobs2:',num2str(xobs2),', difference:',num2str(df),''])
 else
-fprintf(['\n Gage is out of the water mask boundary. \n'])
+fprintf(['\n Gage is out of the water mask boundary.'])
 end
 
 %1km reach along SWm
@@ -226,50 +200,17 @@ xsrdx=mean(x2(2:end)-x2(1:end-1));
 lenr=nn*abs(xsrdx);
 gagewidth=nanmean(hest)*resr;
 % lenr=max(x2(id))-min(x2(id))+abs(xsrdx);
-hold on;plot(([xobs2,xobs2])*1e-3,[0 300],'b.-') %gage coordinate
-hold on;plot((SWm(id)*resr+s0)*1e-3,Wm(id)*resr,'k>');%nearby 10 nodes
-hold on;plot(xobs2*1e-3,gagewidth,'k*','Markersize',12) %averaged width
 if (lenr-gagereach)< -gagereach*0.1
     fprintf(['\n This profile does not have a good coverage of the gage within ',num2str(gagereach),' m:',infile]);
     gagewidth=0;
-    return
 end
-
 %use linear interpolation instead.
 gagewidth = interp1(widthp.x,widthp.y,xobs2,'*linear',NaN);
-hold on;plot(xobs2*1e-3,gagewidth,'r*','Markersize',12) %interpolated width
 
-%get gage width from direct measurement
-if 1
-Sg=[xobs2-dx/2;xobs2+dx/2;]; %streamwise coordinates of 2 end points around the gage.    
-id1=(Sg-0)/rescl+1; %index of S at the Sp nodes.
-idimage=round(id1)-ks+1; % index within the image, i.e. cropped centerline, cl.
-bkpts=idimage(idimage>=1&idimage<=lencl); %end points (nodes) of each segments for width calculation.
-bkptsc=round(bkpts(1:end-1)+(dx/2)/rescl); %center of each segment, index of cl
-bkptsco=bkptsc+ks-1; %index of clx, cly, S.
-%if the gage is out of the image boundary, bkpts is empty.
-
-try
-[Wmg, SWmg] = width_from_mask(data.z, cl, bkpts);
-%SWm streamwise coordinate is based on the new interopolated centerline
-%nodes, it's different from the given centerline due to the curves. Use the
-%corresponding coordinates along original centerline to be consistent with
-%the nodes in ProcessData.m
-SWmg=(S(bkptsco)-s0)/resr; %to be compatible with old version.
-catch e
-     fprintf('width_from_mask error! The message was:\n%s',e.message);
-     gagewidth=0;return
-end
-
-xobs3=SWmg*resr+s0; %centerline distance %double check
-gagewidthb=Wmg*resr; %width
-
-fprintf(['\n Width from direct measurement - width from interpolation=',num2str(gagewidthb-gagewidth),' m.\n'])
-gagewidth=gagewidthb;
-end %get gage width from direct measurement
-
-hold on;plot(([xobs3,xobs3])*1e-3,[0 300],'ro')
-hold on;plot(xobs3*1e-3,gagewidthb,'b*','Markersize',12)%directly measured width
+hold on;plot((SWm(id)*resr+s0)*1e-3,Wm(id)*resr,'g>');
+% hold on;plot(([xobs*resr,xobs*resr]+s0)*1e-3,[0 300],'b-')
+hold on;plot(([xobs2,xobs2])*1e-3,[0 300],'b-')
+hold on;plot(xobs2*1e-3,gagewidth,'b>')
 
 %title(filename(1:13))
 title(filename(10:22))
@@ -299,5 +240,3 @@ end
 
 close all
 end
-
-
