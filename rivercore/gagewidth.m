@@ -129,6 +129,8 @@ meanT=mean(T6f);stdT=std(T6f);
 M=abs(T6f-meanT)<3*stdT&T6fstd<=0.8;
 
 % M=abs(T6f-meanT)<3*stdT&T6fstd<=0.8&~idWV01;
+M1=M&~idWV01;
+M2=M&~idWV01&idb;
 
 % if there is no gage, the interpolation is not accurate.
 %exclude the epochs that has no gage data, for more accurate bias calculation
@@ -138,11 +140,16 @@ dh(id)=[];
 end
 RMSE=nanstd(dh(M))
 Bias=nanmean(dh(M)) %
+RMSEwo1=nanstd(dh(M1));
+Biaswo1=nanmean(dh(M1)); %
+RMSEwo1b=nanstd(dh(M2));
+Biaswo1b=nanmean(dh(M2)); %
+Bias=Biaswo1b;
 % Bias=2.3; %winter2/gageft.txt 0.3261 rms
 gh2=gh2+Bias; %Adjust the USGS gage measurements to the vertical datum of ArcticDEM;
 
-RMSEdt=std(dh(2:end)-dh(1:(end-1)))
-Biasdt=mean(dh(2:end)-dh(1:(end-1)))
+RMSEdt=nanstd(dh(2:end)-dh(1:(end-1)))
+Biasdt=nanmean(dh(2:end)-dh(1:(end-1)))
 
 % id=find(epoch==datenum('2013-03-29'));epoch(id)=[];T6f(id)=[];T6fstd(id)=[];
 % id=find(epochw==datenum('2013-03-29'));epochw(id)=[];ghfw(id,:)=[];
@@ -167,11 +174,13 @@ legend('USGS gage','ArcticDEM Direct Method','ArcticDEM Imagery Method NDWI','Ar
 box on
 ylabel('Elevation (m)')
 datetick('x','yyyy')
+if 0 %already saved in gageheights.m
 ofile=[deblank(odir),'/gagef'];
 % axis([datenum('2010-01-01','yyyy-mm-dd') datenum('2016-01-01','yyyy-mm-dd') 128 133.5])
 saveas(gcf,ofile,'fig')
 print('-dpng','-r400',ofile)
 print('-dpdf','-r400',ofile)
+end
 
 
 % Check the water classification error vs water surface height error.

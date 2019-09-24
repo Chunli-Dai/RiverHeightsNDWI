@@ -120,6 +120,7 @@ RMSEwo1=nanstd(dh(M1));
 Biaswo1=nanmean(dh(M1)); %
 RMSEwo1b=nanstd(dh(M2));
 Biaswo1b=nanmean(dh(M2)); %
+Bias=Biaswo1b;
 % Bias=2.3; %winter2/gageft.txt 0.3261 rms
 gh2=gh2+Bias; %Adjust the USGS gage measurements to the vertical datum of ArcticDEM;
 
