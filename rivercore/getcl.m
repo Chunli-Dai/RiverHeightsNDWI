@@ -12,6 +12,9 @@ bbox=[-149.2 64.5; -149  64.6];
 bbox=[-149.2-1 64.5-1; -149+1  64.6+1];
 loneq=-149.1;lateq=64.55;
 end
+rang0in=rang0;
+exb=15e3;%expand the box by 15km for the given centerline.
+rang0=[rang0in(1)-exb rang0in(2)+exb rang0in(3)-exb rang0in(4)+exb];
 
 %rang0=[xeq-exb xeq+exb yeq-exb yeq+exb ];
 x0=[rang0(1) rang0(2) rang0(2) rang0(1) rang0(1) ];y0=[rang0(4) rang0(4) rang0(3) rang0(3) rang0(4) ];
@@ -46,6 +49,7 @@ hwf=zeros(ns,3);
 for j=1:ns
 idsc(j,:)=[S2(j).segID,S2(j).cl_id];
 hwf(j,:)=[S2(j).p_height,S2(j).p_width,S2(j).flowacc]; %m m km^2
+basin(j)=S2(j).basin_code;
 end
 % [~,idcl]=sort(idsx(:,2));
 
