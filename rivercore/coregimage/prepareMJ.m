@@ -484,8 +484,12 @@ elseif dataflag==3 % Both image are digital globe images
         data2r.Tinfo=Tinfo;%MIMC need time info!
     end
 
+    if ~(isempty(data1r.z) || isempty(data2r.z))
     writeGeotiff(OutName1,data1r.x,data1r.y,data1r.z,5,0,projstr)
     writeGeotiff(OutName2,data2r.x,data2r.y,data2r.z,5,0,projstr)
+    else
+        fprintf('\n prepareMJ.m error; one of the images is empty; Set pzxy to be zeros.')
+    end
     
     %Plot figures; and create gif animations.
 %   co=testgif(data1r,data2r);
