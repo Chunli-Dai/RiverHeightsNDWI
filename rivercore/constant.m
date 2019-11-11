@@ -10,6 +10,7 @@ codedir='../rivergithub2/';
 multidir='/fs/byo/howat-data2/river/2018dec03/ortho/';
 multidir='/fs/byo/howat-data5/pgc_deliv/chunli/sag/deliv3/ortho_imagery_non-max_ona/';
 multidir='/fs/byo/howat-data5/pgc_deliv/chunli/DaiTerHyd/deliv3_AlaskaRiverGaugesOrthoImagery_20190315/ortho_imagery_non-max_ona/';
+multidir='/fs/byo/howat-data3/pgc_deliv/chunli/DaiTerHyd/deliv3_AlaskaRiverGaugesOrthoImagery_20190315/';
 % stripdir='/data3/ArcticDEM/region_*/strips/2m/';
 stripdir='/Users/chunlidai/Google Drive/NASAHydro/manuscript2/data/';
 stripdir='/home/dai.56/data2/river/2018dec03/setsm_results/strips/2m_filt001/';
