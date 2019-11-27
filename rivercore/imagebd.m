@@ -1,4 +1,4 @@
-function [XYbi,rangei]=imagebd(ifile);
+function [XYbi,rangei]=imagebd(ifile)
 %get the Polygon boundary, and the rectangle range of a mono image from .xml file
 % e.g. /data1/pgc_projects/dai_aleutians_multi_mono/imagery//WV02/WV02_20130923221601_1030010026BD6B00_13SEP23221601-M1BS-500127380110_01_P001.xml 
 	constant
@@ -6,11 +6,11 @@ function [XYbi,rangei]=imagebd(ifile);
     vstr={'<ULLON>','<ULLAT>','<URLON>','<URLAT>','<LRLON>','<LRLAT>','<LLLON>','<LLLAT>'};
 %   flagfmt1=1; %flag for format 1; default format
     
-    vstr2={'<upperLeft>','<upperRight>','<lowerRight>','<lowerLeft>'};
+    vstr2={'<upperLeft>','<upperRight>','<lowerRight>','<lowerLeft>'};%mono image xml
 %   flagfmt2=1; %
 
 	vstr3={'X:','Y:'}; %3 strip meta file contain vstr4 also.
-	vstr4={'Upper left coordinates'};%4
+	vstr4={'Upper left coordinates'};%4 scene meta file, tif_results
 	
 	if ~exist(ifile,'file')
 		warning(['meta file does not exist.',ifile])
@@ -33,11 +33,13 @@ function [XYbi,rangei]=imagebd(ifile);
         r3=find(~cellfun(@isempty,strfind(c,str)));
         i=1;str=vstr4{i};
         r4=find(~cellfun(@isempty,strfind(c,str)));
-	if ~isempty(r3)
-	   flagfmt=3;
-	else
-	   flagfmt=4;
-	end
+        if ~isempty(r3)
+           flagfmt=3;
+        else
+           flagfmt=4;
+        end
+    elseif strcmp(name1,'_mdf.txt')
+        flagfmt=5;
     elseif ~isempty(r1)
         flagfmt=1;
     elseif ~isempty(r2)
@@ -47,6 +49,10 @@ function [XYbi,rangei]=imagebd(ifile);
 
 % Get the Footprint Vertices X, Y, close the loop
     if flagfmt==1 
+% /fs/byo/howat-data5/pgc_deliv/chunli/DaiTerHyd/deliv3_AlaskaRiverGaugesOrthoImagery_20190315/ortho_imagery_non-max_ona/QB02_20020222212303_1010010000215600_02FEB22212303-M1BS-052800669020_01_P001_u16ns3413.xml     
+%                         <ULLON>-1.501389837000000e+02</ULLON>
+%                         <ULLAT>6.126182419000000e+01</ULLAT>
+    
 	n=length(vstr)/2;
 	lon=zeros(n+1,1);lat=zeros(n+1,1);
 	for i=1:n*2
@@ -73,6 +79,11 @@ function [XYbi,rangei]=imagebd(ifile);
 
     elseif flagfmt ==2
         %/data4/EarthDEM/alaska_2018oct26/qb_wv_alaska_metadata/QB02_20030408203848_1010010001C95401_03APR08203848-P1BS-000000073404_01_P001.xml 
+%           <upperLeft>
+%                 <latitude>61.21</latitude>
+%                 <longitude>-145.416111111</longitude>
+%           </upperLeft>
+        
     n=length(vstr2);
 	lon=zeros(n+1,1);lat=zeros(n+1,1);
 	for i=1:n
@@ -101,6 +112,9 @@ function [XYbi,rangei]=imagebd(ifile);
 
     elseif flagfmt ==3
 	%/data3/ArcticDEM/region_34_alaska_north/strips/2m/WV02_20160806_103001005A286A00_103001005A1A8300_seg1_2m_meta.txt
+    %X: -2060408 -2058776 -2058248 -2057592 -2057376 -2054626 -2054282 -2054186 -2052908 -1962418 -1961946 -1957764 -1957764 -1959332 -1960252 -1962620 -1962630 -1963390 -2060336 -2060464 -2060480 -2060408 
+    % Y: 740374 745446 747054 748996 749476 755420 756140 756332 756412 723102 722926 720648 720622 715246 712112 704224 704224 704488 739328 739376 739384 740374 
+    
         r=find(~cellfun(@isempty,strfind(c,vstr3(1))));
         Xbs=deblank(strrep(c{r(1)},vstr3{1},''));
 	if ~isempty(Xbs)
@@ -115,13 +129,16 @@ function [XYbi,rangei]=imagebd(ifile);
     elseif flagfmt ==4
 	%/home/dai.56/data2/ArcticDEM/region_31_alaska_south/tif_results/2m/GE01_20161023_1050010006C6CC00_1050010006C6CA00_501020521050_01_P003_501020521060_01_P002_2_meta.txt
 	% chunli/scripts/run_overlap.sh  gives the boundary of image including edges; to use matchtag to exclude edges.
-	if 1 %method with matchtag, too slow, 5 sec; 1 sec if (imresize with 0.01 instead of 0.1)
+%     Output dimensions=3621  8841
+%     Upper left coordinates=-3065560.000000  827080.000000
+
+    if 1 %method with matchtag, too slow, 5 sec; 1 sec if (imresize with 0.01 instead of 0.1)
 	tic  %too slow, 5 sec
-	infile= strrep(metafile,'meta.txt','matchtag.tif');
+        infile= strrep(metafile,'meta.txt','matchtag.tif');
         if exist(infile,'file') 
         data=readGeotiff(infile); %0 is good; 1 is edge; > 1 bad data.
-	else
-	   fprintf([infile,' not exist.'])
+        else
+        fprintf([infile,' not exist.'])
            XYbi=[0 0]; 	rangei=[0 0 0 0];
 		return;
         end
@@ -150,7 +167,7 @@ function [XYbi,rangei]=imagebd(ifile);
                 mfile{i}=deblank(strrep(c1,'P1BS','M1BS'));%e.g.WV02_20160304214247_1030010052B75A00_16MAR04214247-M1BS-500641617080_01_P009.tif
             end
 	    xmlfile=strrep(mfile{i},'.tif','.xml');
-	    [status, cmdout ]=system(['find ',multidir,' -name ',xmlfile]); %returns empty for cmdout when not found. status=0 always
+	    [status, cmdout ]=system(['find -L ',multidir,' -name ',xmlfile]); %returns empty for cmdout when not found. status=0 always
 	    if  ~isempty(cmdout) %if .ntf file is found, tif file is produced and stored in orthworkdir.
     		mfile{i}=deblank(cmdout);
 	    end
@@ -196,6 +213,54 @@ function [XYbi,rangei]=imagebd(ifile);
                 return;
 	    end
 	end %method
+    
+    elseif flagfmt == 5
+        %  '/Users/chunlidai/share/landslide/site1Eureka/stripdata/SETSM_GE01_20090804_10504100049D6800_1050410002F81C00_seg1_2m_v3.0_mdf.txt'
+%         X1 = -699068.0;
+%         Y1 = -842660.0;
+%         X2 = -699052.0;
+%         Y2 = -842636.0;
+	str1='X1 =';
+        r1=find(~cellfun(@isempty,strfind(c,str1)));
+	str='horizontalCoordSysOGCWKT';
+        r2=find(~cellfun(@isempty,strfind(c,str)));
+
+	n=round((r2-r1)/2);
+	lon=zeros(n+1,1);lat=zeros(n+1,1);
+	for i=1:n*2
+        j=ceil(i/2);
+        if mod(i,2)  %1 odd number, 0 even
+           stri=deblank(strrep(str1,'X1',['X',num2str(j)]));
+        else
+           stri=deblank(strrep(str1,'X1',['Y',num2str(j)]));
+        end
+
+	str=stri;
+	r=find(~cellfun(@isempty,strfind(c,str)));
+	if isempty(r)        
+		warning(['xml file is different as anticipated.',ifile])
+        XYbi=[0 0]; 	rangei=[0 0 0 0];
+		return;
+	end %
+	c2=c{r(1)};
+
+	Ybs=deblank(strrep(c{r(1)},stri,''));
+    Ybs=deblank(strrep(Ybs,';',''));
+    z = sscanf(Ybs, '%g', 1);
+
+%	r1=strfind(c2,'=');r2=strfind(c2,';');
+%    c2([1:r1(1),r2(1):end])='';
+%	z = sscanf(c2, '%g', 1);
+	if mod(i,2)  %1 odd number, 0 even
+           lon(j)=z;
+	else
+	   lat(j)=z;
+	end
+	end % if i
+	lon(n+1)=lon(1);lat(n+1)=lat(1); %close the loop
+	Xb=lon;Yb=lat; 
+
+    % Unkown format
     else 
         		warning(['xml file is different as anticipated.',ifile])
         XYbi=[0 0;]; 	rangei=[0 0 0 0];

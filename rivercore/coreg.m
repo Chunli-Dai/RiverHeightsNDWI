@@ -2,6 +2,8 @@ function [dX4Sg,idregion,data0r]=coreg(rang0,idregion,XYbg,f,fdir)
 close all
 constant
 
+flagplot=flagplot;
+
 % find the DEM mosaics within rang0.
 xr0=[rang0(1) rang0(2) rang0(2) rang0(1) rang0(1) ];yr0=[rang0(4) rang0(4) rang0(3) rang0(3) rang0(4) ];
 
@@ -50,7 +52,7 @@ for x=min(xc):dx/2:max(xc)
 %     pause
     
         % find the dem tile file or download the data
-    [status , cmdout ]=system(['find ',tiledir,' -name ',tilefile]); %status always 0, cmdout could be empty.
+    [status , cmdout ]=system(['find -L ',tiledir,' -name ',tilefile]); %status always 0, cmdout could be empty.
     if ~isempty(cmdout) && status ==0 % 
         tilefile=deblank(cmdout);
     else
@@ -66,7 +68,7 @@ for x=min(xc):dx/2:max(xc)
         %collect all downloaded mosaic dems to tiledirnew/ % to do
         %system(['mv *dem_meta.txt  *reg.txt *.tar *_reg_dem.tif *_reg_matchtag.tif ',tiledirnew]);
         system(['cp ',name(1:5),'* ', tiledirnew]);
-        [status , cmdout ]=system(['find ./ -name ',tilefile]);
+        [status , cmdout ]=system(['find -L ./ -name ',tilefile]);
         %[status , cmdout ]=system(['find ',tiledirnew,' -name ',tilefile]);
 	C = strsplit(strtrim(cmdout));
         %tilefile=deblank(cmdout);
@@ -153,7 +155,8 @@ idreg=find(dzxyd(:,1)~=0);  %reg file
 idregn=find(dzxyd(:,1)==0); %no reg file
 pg=zeros(length(idregion),3);dX4Sg=pg;rmsreg2=zeros(length(idregion),1);
 idd=[];idd2=[];
-for j=1:length(idregion) % %hi
+poolobj=parpool(poolsize);
+parfor j=1:length(idregion) % %hi
     %idreg' %idreg([2 5 6 7 10 12 14 15 18])'%[idregn(:)]'  %files that have no reg.txt file.
     i=idregion(j);
     Xb2=XYbg{i}(:,1);
@@ -247,11 +250,11 @@ for j=1:length(idregion) % %hi
           idd=[idd;j];
       else
         dx=p(2);dy=p(3); %z, x, y
-        pg(j,1:3)=p;
+        pg(j,:)=p;
 % 	dzxyt=dzxyd(idreg(iref),:); %dx in the reg.txt file
 % 	if abs(dx)+abs(dy)~=0
 %         dx3=p(2:3);
-        dX4Sg(j,1:3)=p+dx4;%p(2:3)+dx4(2:3); %
+        dX4Sg(j,:)=p+dx4;%p(2:3)+dx4(2:3); %
     
 %         df=p+dx4-dzxyd(j,:); %validation z, x, y
       
@@ -309,6 +312,8 @@ saveas(gcf,ofile,'fig')
 close all
 	
 end % if j
+delete(poolobj)
+
 
 % remove strips that are not coregistered.
 if 1  %hi; still use the data even if the coregistration is bad, dx4=0.

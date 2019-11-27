@@ -11,7 +11,7 @@ save(ofile,'a','b','-v7.3')
 mean1=nanmean(a);std1=nanstd(a);cnt1=sum(~isnan(a));
 mean2=nanmean(b);std2=nanstd(b);cnt2=sum(~isnan(b));
 p1=0.5;p2=0.5; %Note: p1+p2 should be 1.
-flagplot=1;
+%flagplot=1;
 display(['Initial mean1 std1 mean2 std2:',num2str([mean1 std1 mean2 std2])])
 %here, mean1 is for land;
 

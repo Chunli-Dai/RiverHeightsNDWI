@@ -5,6 +5,8 @@ function [c,widave]=getcl(rang0,loneq,lateq)
 % output: c.X c.Y: longitude and latitude of output rivercenterline (going
 % uphill).
 % widave: average width in m.
+constant
+flagplot=1;
 
 %input parameters
 if 0
@@ -105,6 +107,7 @@ for j=1:length(segu)
 end
 
 %coordinates of start and end points;
+if flagplot==1
 figure
 for j=1:length(segu)
     hold all;plot(datarsv(j).X,datarsv(j).Y,'.-','linewidth',1);
@@ -114,6 +117,7 @@ hold all;plot([sx(idg,1),loneq],[sx(idg,2),lateq],'g>-');
 hold all;plot(pts(:,1),pts(:,2),'g*');
 hold all;plot(pte(:,1),pte(:,2),'b*');
 hold all;plot(x0,y0,'-','linewidth',3)
+end
 
 %Find the connect points from the START point of seg0 .
 iter=0;isegcs1sv=[];ptcs1sv=[];
@@ -314,6 +318,7 @@ if pth(2)<pth(1) %downhill
 end
 save clsv2.mat c
 
+if flagplot==1
 hold on;plot(c.X,c.Y,'k-',c.X(1),c.Y(1),'k>','linewidth',3,'markersize',8);
 box on
 xlabel('Longitude');ylabel('Latitude')
@@ -332,6 +337,7 @@ box on
 % legend('height','width','flowacc')
 set(gcf,'Color','white');set(gca,'FontSize', 12);set(gcf, 'PaperPosition', [0.3 0 3.8 3]); set(gcf, 'PaperSize', [4 3]);
 xlabel('River ceterline node number')
+end
 
  save t2.mat -v7.3
 

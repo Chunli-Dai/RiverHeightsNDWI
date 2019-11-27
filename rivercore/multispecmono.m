@@ -80,9 +80,14 @@ Mstrip=struct(); Mstrip.x=[];Mstrip.y=[];Mstrip.z=[];Mstrip.coast=[];Mstrip.n=[]
 for is=1:nsce
 ntffile=strrep(mfile{is},'.xml','.ntf');
 tiffile=strrep(mfile{is},'.xml','.tif');
+
+tiffile1=strrep(stripmetafile,'.xml','.tif'); %assume input is a mono image meta file name instead of a strip image meta file name.
+if exist(tiffile1,'file')
+   tiffile=tiffile1;
+else  %assume input is a strip image file, to find each mono image
 %[status , cmdout ]=system(['ls ',multidir,'/*/',ntffile]);%status =0 if found; but too strict on multidir.
-[status , cmdout ]=system(['find ',multidir,' -name ',ntffile]); %returns empty for cmdout when not found. status=0 always
-[status2 , cmdout2 ]=system(['find ',multidir,' -name ',tiffile]);
+[status , cmdout ]=system(['find -L ',multidir,' -name ',ntffile]); %returns empty for cmdout when not found. status=0 always
+[status2 , cmdout2 ]=system(['find -L ',multidir,' -name ',tiffile]);
 if  ~isempty(cmdout) %if .ntf file is found, tif file is produced and stored in orthworkdir.
     ntffile=deblank(cmdout);
 end
@@ -102,6 +107,9 @@ if 0&& ~exist(tiffile,'file')
 display(['time gdalwarp -rpc -et 0.01 -co tiled=yes -co compress=lzw -t_srs EPSG:3413 ',ntffile,' ',tiffile])
 system(['time gdalwarp -rpc -et 0.01 -co tiled=yes -co compress=lzw -t_srs EPSG:3413 ',ntffile,' ',tiffile]);
 end
+
+end %retrieve tiffile name
+
 if exist(tiffile,'file')
     infile=tiffile;
     try
@@ -143,13 +151,18 @@ end
 % metafile=[macdir,'/data3/ArcticDEM/region_31_alaska_south/strips/2m/WV03_20170414_104001002CD4E700_104001002BA9FA00_seg2_2m_meta.txt'];
 %/data3/ArcticDEM/region_31_alaska_south/strips/2m/WV03_20170414_104001002CD4E700_104001002BA9FA00_seg2_2m_meta.txt 
 infile=mfile{is};
-[status , cmdout ]=system(['find ',multidir,' -name ',infile]);
+metafile1=stripmetafile; %assume input is a mono image meta file name instead of a strip image meta file name.
+if exist(metafile1,'file')
+   metafile=metafile1;
+else 
+[status , cmdout ]=system(['find -L ',multidir,' -name ',infile]);
 if  ~isempty(cmdout) %if  file is found
     metafile=deblank(cmdout);
 else
     warning(['Metafile ',metafile,' not found!'])
     continue
 end
+end %if exist
 %metafile=deblank(strrep(ntffile,'.ntf','.xml'));
 %get ABSCALFACTOR EFFECTIVEBANDWIDTH for each band, and MEANSUNEL
 c=textread(metafile,'%s','delimiter','\n');

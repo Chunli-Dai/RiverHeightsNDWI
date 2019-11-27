@@ -282,6 +282,7 @@ saveas(gcf,ofile,'fig')
 %plot the profile along input river centerline.
 %first point of the centerline of this image
 
+if flagplot==1
 figure (1)
 hold all
 h=plot((SWm*resr+s0)*1e-3,Wm*resr,'-','DisplayName',filename(10:22));
@@ -294,6 +295,7 @@ xlabel('streamwise distance (km)'); ylabel('width (m)')
 legend('show');
 ofile=['pic/allwidth'];
 saveas(gcf,ofile,'fig')
+end %if flagplot
 
 end
 

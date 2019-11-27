@@ -2,7 +2,7 @@ function [mtli,badflag2,sigma0hat]=autothresndwi(datax,datay,or,meanw,meanl)
 %automatically searching threshold to find the one that gives the minimum change of water area.
 %Wang et al. (2014, https://doi.org/10.1016/j.rse.2014.06.004).
 constant
-flagplot=1;
+%flagplot=1;
 
 NDWI=or;
 edge=isnan(or);
@@ -18,7 +18,7 @@ Topt=zeros(size(mtl));
 fprintf(['hi 4 ',num2str(int32(clock)),'.\n'])
 whos
 
-figure(1)
+%figure(1)
 for i=nc %1:nc
 fprintf(['Calculating ',num2str(i),' out of ',num2str(nc),' candidates, at ',num2str(int32(clock)),'.\n'])
 whos
@@ -88,10 +88,13 @@ for i=1:nc-1
 waterareart(i)=(waterarea(i+1)-waterarea(i))/waterarea(i)*100; % relative change percentage
 end
 
+if flagplot==1
 figure;plot(mtl(1:nc-1),waterareart,'o-')
 hold all;plot(mtl,Topt,'>-')
 legend('water area change','Optimal Threshold')
 saveas(gcf,'waterareart','fig')
+end
+
 [~,idi]=min(abs(waterareart));
 mtli=mtl(idi);
 Mor=(or>mtli); %20121011

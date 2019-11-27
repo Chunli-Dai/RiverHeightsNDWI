@@ -139,12 +139,12 @@ id=[2,3,4,5,6,8, 10,11,12, 16,19]; % 8 20110804; 19 20130413
 dh(id)=[];
 end
 RMSE=nanstd(dh(M))
-Bias=nanmean(dh(M)) %
+Bias=nanmean(dh(M)); %
 RMSEwo1=nanstd(dh(M1));
 Biaswo1=nanmean(dh(M1)); %
 RMSEwo1b=nanstd(dh(M2));
 Biaswo1b=nanmean(dh(M2)); %
-Bias=Biaswo1b;
+Bias=Biaswo1b
 % Bias=2.3; %winter2/gageft.txt 0.3261 rms
 gh2=gh2+Bias; %Adjust the USGS gage measurements to the vertical datum of ArcticDEM;
 

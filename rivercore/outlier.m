@@ -1,4 +1,5 @@
 function [idkp]=outlier(odir,demp,dempmt,epochorg,ymd)
+constant
 y0s=630998;%y0;
 y0s=0; %630998;%y0;
 t=epochorg;
@@ -26,6 +27,7 @@ multi=3;%6;%3;
 id=find(abs(etilde)>=multi*stdi);idout=[idoutpre;idkp(id)];idsign=id;
 tkp=t(idkp);[ts,idsort]=sort(tkp);
 
+if flagplot==1
 figure % (1)
 set(gcf,'Color','white')
 set(gca,'FontSize', 18);
@@ -41,11 +43,14 @@ plot(t(idkp(idsort)),fit(idsort)+multi*stdi,'r-','linewidth',4)
 datetick('x','mm/yy')
 box on
 ylabel('DEM time series')
+end
 
 idkp= idkp(~ismember(idkp,idout));
 idout2=find(dempmt==0);idkp= idkp(~ismember(idkp,idout2));
 tkp=t(idkp);[ts,idsort]=sort(tkp);
+if flagplot==1
 figure;plot(t(idkp(idsort)),demp(idkp(idsort)),'b>-','MarkerSize',12,'linewidth',4)
+end
 
 %get the elevation time series without outlier
 zp=demp(idkp);yp=t(idkp);
@@ -57,12 +62,15 @@ for j=1:(length(ty)-1);
     tzt=zp(yp>=ty(j)&yp<ty(j+1));
     tz(j)=mean(tzt,'omitnan');tzs(j)=std(tzt,'omitnan');
 end
+if flagplot==1
 figure;hold on ; plot(ty(1:end-1),tz,'r.-')
+end
 
 epoch=ty(1:end-1);T6=tz;T6std=tzs;
 if isempty(T6)
 warning(['Empty time series ',num2str(ymd)])
 else
+if flagplot==1
 figure  
 set(gcf,'Color','white')
 set(gca,'FontSize', 12);
@@ -81,6 +89,7 @@ ofile=[odir,'/rivprof',num2str(ymd)];
 % [dir,str,ext] =fileparts(infile);
 title([num2str(ymd)])
 saveas(gcf,ofile,'fig')
+end
 end
 
 close all

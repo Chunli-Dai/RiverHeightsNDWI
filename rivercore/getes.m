@@ -25,7 +25,7 @@ ksi=A\yobs;
 yfit=A*ksi;
 k=ksi(1);
 
-figure;hold on;plot(x*1e-3,y*1e-3,'r.',x*1e-3,yfit*1e-3,'r-','linewidth',3)
+%figure;hold on;plot(x*1e-3,y*1e-3,'r.',x*1e-3,yfit*1e-3,'r-','linewidth',3)
 
 if (abs(k)<=1) %
    es='EW';
