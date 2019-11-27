@@ -43,10 +43,15 @@ satname=filename(1:4);
 %get image 1 filenames, and dx2;
 c=textread(stripmetafile,'%s','delimiter','\n');
 rs=find(~cellfun(@isempty,strfind(c,'scene')));
+
+if ~isempty(rs) %strip DEM
 nsce=length(rs)-1; %number of scenes
 rmsmeta=zeros(nsce,1);idd=[];dzxyd=zeros(nsce,3);mfile=cell(nsce,1);
 for i=1:nsce
-c1=c{rs(1)+i};r1=strfind(c1,'dem.tif');c1(1:(r1+6))='';
+% c1=c{rs(1)+i};r1=strfind(c1,'dem.tif');c1(1:(r1+6))='';
+%new release scene name is '_dem_smooth.tif'
+c1=c{rs(1)+i};
+matchStr = regexp(c1,'.tif','split');c1=matchStr{end};
 tmp=sscanf(c1, '%g', 4);
 rmsmeta(i)=tmp(1);dzxyd(i,1:3)=tmp(2:4);
 
@@ -63,6 +68,30 @@ else
 end
 
 end
+
+else %rs is empty; scene DEM meta file
+% compatible for scene DEM meta file.
+check={'Image 1=','/','.tif'};
+Mcheck=contains(c,check{1})&contains(c,check{2})&contains(c,check{3});
+c1all=c(Mcheck);
+nsce=sum(Mcheck(:));
+rmsmeta=zeros(nsce,1);idd=[];dzxyd=zeros(nsce,3);mfile=cell(nsce,1);
+
+for i=1:nsce
+c1=c1all{i};
+r1=strfind(c1,'/');c1(1:(r1(end)))='';
+
+c11=deblank(c1);
+satname=c11(1:4);%use this, since strip could be W1W2_20110825_1020010014850E00_103001000C5BD600_seg1_2m_meta.txt
+
+if strcmp(satname,'WV01')
+    mfile{i}=deblank(c1);
+else
+    mfile{i}=deblank(strrep(c1,'P1BS','M1BS'));%e.g.WV02_20160304214247_1030010052B75A00_16MAR04214247-M1BS-500641617080_01_P009.tif
+end
+end
+end %if ~isempty(rs)
+
 %find the unique images, delete the repeat file names, average the dzxy, and rms
 [un idx_last idx] = unique(mfile,'stable');
 unique_idx = accumarray(idx(:),(1:length(idx))',[],@(x) {(x)});
@@ -78,6 +107,7 @@ Mstrip=struct(); Mstrip.x=[];Mstrip.y=[];Mstrip.z=[];Mstrip.coast=[];
 for is=1:nsce
 ntffile=strrep(mfile{is},'.tif','.ntf');
 ntffile(end-3:end)='';%delete the extension.
+ntffile=strrep(ntffile,'_temp',''); %new release
 rs=find(~cellfun(@isempty,strfind(fis,ntffile)));
 
 if ~isempty(rs) %if water mask file is found.
@@ -100,6 +130,21 @@ end
 dx2=dzxydu(is,2:3);%old method, not accurate, since the mono orthoimage and strip orthoimage use different DEMs.
 dx2=tzxy3(2:3)-pzxy(2:3);%use the coregistration results(mono to strip orthoimage), accurate within 0.2m 
 %if in pxpymono.m, the mono image of strip file use its own strip orthoimage as reference.
+
+fprintf(['\n p_mono_strip = p_mono_mosaic - p_strip_mosaic:',num2str(dx2),'.'])
+%carry out the direct coregistration of mono image to the strip file. Refers to pxpymono.m
+refimage=stripmetafile;
+tarimage=fis{rs};
+odircoregi=[deblank(odircoreg),'/',filename,'/'];
+[dx2di,flag]=coregmonostrip(refimage,tarimage,odircoregi);
+
+if flag==0 %coregistration failure
+fprintf(['Mono image vs strip image coregistration failure:',tarimage,' VS ',refimage])
+continue
+end
+
+fprintf(['\n p_mono_strip direct coregistration:',num2str(dx2di),'; maybe the same as above if all strips are intrack strips:',num2str(dx2),'; not the same but similar if it includes cross-track strips.'])
+dx2=dx2di;
 
 % collect overlapping M, choose value from (NaN, value), and choose 1 from
 % (value, 1); <-> choose the larger value of M

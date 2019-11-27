@@ -26,7 +26,7 @@ load('alaska2.mat')
 else
 filename='monolist'; %'boundaries_reg31.dat';
 if ~exist(filename,'file')
-   str=sprintf('find  %s -name ''*[0-9].xml'' > %s',deblank(multidir),filename);
+   str=sprintf('find -L %s -name ''*[0-9].xml'' > %s',deblank(multidir),filename);
   [status, cmdout]=system(str);
 end
 fid = fopen(filename);
